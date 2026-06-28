@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-const LOGO_ICON = "/src/assests/logo-icon.png";
+import LOGO_ICON from "./assests/logo-icon.png";
 
 const T = {
   bg: "#0c0d11", bgCard: "#13141a", bgRaised: "#1a1c24",

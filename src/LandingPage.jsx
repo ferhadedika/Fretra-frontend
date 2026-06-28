@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import LOGO_FULL from "./assests/logo-full.png";
+import LOGO_ICON from "./assests/logo-icon.png";
 
-/* ── Logo images ── */
-const LOGO_FULL = "/src/assests/logo-full.png";
-const LOGO_ICON = "/src/assests/logo-icon.png";
+
 
 const STATS = [
   { value: "10",    suffix: "+", label: "Years of SCFI Historical Data" },
