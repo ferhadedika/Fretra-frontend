@@ -1,6 +1,6 @@
 import "../styles/header.css";
 
-const LOGO_ICON = "/src/assests/logo-icon.png";
+import LOGO_ICON from "../assests/logo-icon.png";
 
 export function Header({ firestoreMode }) {
   return (
