@@ -1,0 +1,178 @@
+/* ──────────────────────────────────────────────────────────────────────
+   FreightAI — Premium Dark Design System
+   Inspired by top-tier SaaS dashboards: deep charcoal base, rich shadows,
+   restrained accent usage, no navy oversaturation.
+   ────────────────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  /* ── Base surfaces ── */
+  --bg-app:           #0c0d11;   /* near-black, not navy */
+  --bg-sidebar:       #0e0f14;
+  --bg-card:          #13141a;   /* charcoal card */
+  --bg-card-raised:   #1a1c24;   /* elevated layer */
+  --bg-card-hover:    #1e2030;
+  --bg-input:         #181921;
+  --bg-overlay:       rgba(0, 0, 0, 0.72);
+
+  /* ── Borders ── */
+  --border:           #22242e;
+  --border-hover:     #323546;
+  --border-active:    #44475a;
+  --border-subtle:    #1a1c24;
+
+  /* ── Text ── */
+  --text-primary:     #edeef2;
+  --text-secondary:   #b0b4c4;
+  --text-muted:       #7a7f96;
+  --text-dim:         #44475a;
+  --text-inverse:     #0c0d11;
+
+  /* ── Accents — restrained, purposeful ── */
+  --accent-blue:      #4f6ef7;   /* softer, less saturated */
+  --accent-blue-dim:  rgba(79, 110, 247, 0.15);
+  --accent-blue-glow: rgba(79, 110, 247, 0.25);
+  --accent-violet:    #8b5cf6;
+  --accent-violet-dim:rgba(139, 92, 246, 0.15);
+  --accent-green:     #10b77f;
+  --accent-green-dim: rgba(16, 183, 127, 0.12);
+  --accent-amber:     #f59e0b;
+  --accent-amber-dim: rgba(245, 158, 11, 0.12);
+  --accent-red:       #ef4444;
+  --accent-red-dim:   rgba(239, 68, 68, 0.12);
+  --accent-teal:      #06b6d4;
+
+  /* ── Shadows — the premium differentiator ── */
+  --shadow-sm:        0 1px 3px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md:        0 4px 12px rgba(0,0,0,0.55), 0 2px 4px rgba(0,0,0,0.4);
+  --shadow-lg:        0 8px 28px rgba(0,0,0,0.65), 0 4px 8px rgba(0,0,0,0.45);
+  --shadow-xl:        0 16px 48px rgba(0,0,0,0.75), 0 8px 16px rgba(0,0,0,0.5);
+  --shadow-card:      0 2px 8px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+  --shadow-card-hover:0 4px 20px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06);
+  --shadow-glow-blue: 0 0 20px rgba(79,110,247,0.2), 0 0 40px rgba(79,110,247,0.08);
+  --shadow-glow-green:0 0 20px rgba(16,183,127,0.2), 0 0 40px rgba(16,183,127,0.08);
+  --shadow-glow-violet:0 0 20px rgba(139,92,246,0.2), 0 0 40px rgba(139,92,246,0.08);
+
+  /* ── Typography ── */
+  --font-body:        "Barlow", "Inter", sans-serif;
+  --font-display:     "Barlow Condensed", sans-serif;
+  --font-mono:        "JetBrains Mono", "Fira Code", monospace;
+
+  /* ── Shape ── */
+  --radius-sm:        6px;
+  --radius:           10px;
+  --radius-md:        12px;
+  --radius-lg:        16px;
+  --radius-xl:        20px;
+  --radius-pill:      999px;
+
+  /* ── Motion ── */
+  --ease-out:         cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out:      cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast:         120ms;
+  --dur-base:         180ms;
+  --dur-slow:         280ms;
+}
+
+/* ── Reset & base ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Subtle noise texture overlay on the app bg ── */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+a {
+  color: var(--accent-blue);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--text-primary);
+}
+
+/* ── Scrollbar — refined ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: var(--radius-pill); }
+::-webkit-scrollbar-thumb:hover { background: var(--border-active); }
+
+/* ── Focus ── */
+:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Selection ── */
+::selection {
+  background: rgba(79, 110, 247, 0.25);
+  color: var(--text-primary);
+}
+
+/* ── Utility: shimmer skeleton loader ── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-card-raised) 25%,
+    var(--bg-card-hover)  50%,
+    var(--bg-card-raised) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Utility: subtle gradient divider ── */
+.gradient-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  border: none;
+  margin: 0;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

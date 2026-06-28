@@ -1,0 +1,289 @@
+/* ── KPI Cards ── */
+
+.kpi-grid {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.kpi-grid--headline {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.kpi-grid--accuracy {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+/* The card itself */
+.kpi-card {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px 20px 16px;
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  transition:
+    border-color var(--dur-base) var(--ease-in-out),
+    box-shadow var(--dur-base) var(--ease-in-out),
+    transform var(--dur-base) var(--ease-in-out);
+}
+
+/* Inset top highlight */
+.kpi-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  pointer-events: none;
+}
+
+/* Bottom accent bar — colour injected via modifier */
+.kpi-card::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: transparent;
+  transition: background var(--dur-slow) var(--ease-in-out);
+}
+
+.kpi-card:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-1px);
+}
+
+/* Colour variants — accent bar + faint background glow */
+.kpi-card--blue::after   { background: linear-gradient(90deg, transparent, var(--accent-blue), transparent); }
+.kpi-card--green::after  { background: linear-gradient(90deg, transparent, var(--accent-green), transparent); }
+.kpi-card--amber::after  { background: linear-gradient(90deg, transparent, var(--accent-amber), transparent); }
+.kpi-card--violet::after { background: linear-gradient(90deg, transparent, var(--accent-violet), transparent); }
+.kpi-card--red::after    { background: linear-gradient(90deg, transparent, var(--accent-red), transparent); }
+
+.kpi-card--blue   { box-shadow: var(--shadow-card), 0 0 0 0 transparent; }
+.kpi-card--blue:hover   { box-shadow: var(--shadow-card-hover), var(--shadow-glow-blue); }
+.kpi-card--green:hover  { box-shadow: var(--shadow-card-hover), var(--shadow-glow-green); }
+.kpi-card--violet:hover { box-shadow: var(--shadow-card-hover), var(--shadow-glow-violet); }
+
+.kpi-card--mini { padding: 14px 16px 12px; }
+
+/* Background ambient gradient (very subtle) */
+.kpi-card__ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity var(--dur-slow);
+}
+
+.kpi-card--blue   .kpi-card__ambient { background: radial-gradient(circle at 80% 20%, rgba(79,110,247,0.07), transparent 65%); }
+.kpi-card--green  .kpi-card__ambient { background: radial-gradient(circle at 80% 20%, rgba(16,183,127,0.07), transparent 65%); }
+.kpi-card--violet .kpi-card__ambient { background: radial-gradient(circle at 80% 20%, rgba(139,92,246,0.07), transparent 65%); }
+.kpi-card--amber  .kpi-card__ambient { background: radial-gradient(circle at 80% 20%, rgba(245,158,11,0.07), transparent 65%); }
+
+.kpi-card:hover .kpi-card__ambient { opacity: 1; }
+
+/* Content */
+.kpi-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.kpi-card__title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kpi-card__icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.kpi-card__icon--blue   { background: var(--accent-blue-dim); color: var(--accent-blue); border: 1px solid rgba(79,110,247,0.2); }
+.kpi-card__icon--green  { background: var(--accent-green-dim); color: var(--accent-green); border: 1px solid rgba(16,183,127,0.2); }
+.kpi-card__icon--amber  { background: var(--accent-amber-dim); color: var(--accent-amber); border: 1px solid rgba(245,158,11,0.2); }
+.kpi-card__icon--violet { background: var(--accent-violet-dim); color: var(--accent-violet); border: 1px solid rgba(139,92,246,0.2); }
+.kpi-card__icon--red    { background: var(--accent-red-dim); color: var(--accent-red); border: 1px solid rgba(239,68,68,0.2); }
+
+/* Value */
+.kpi-card__value {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+
+.kpi-card--mini .kpi-card__value { font-size: 24px; }
+
+.kpi-card__value--blue   { color: var(--accent-blue); }
+.kpi-card__value--green  { color: var(--accent-green); }
+.kpi-card__value--amber  { color: var(--accent-amber); }
+.kpi-card__value--violet { color: var(--accent-violet); }
+
+/* Sub-text */
+.kpi-card__sub {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* Delta */
+.kpi-card__delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-top: 10px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.kpi-card__delta.is-pos {
+  color: var(--accent-green);
+  background: var(--accent-green-dim);
+}
+
+.kpi-card__delta.is-neg {
+  color: var(--accent-red);
+  background: var(--accent-red-dim);
+}
+
+.kpi-card__delta.is-neutral {
+  color: var(--text-muted);
+  background: rgba(122,127,150,0.08);
+}
+
+/* ── Tooltip (info icon) ── */
+.kpi-tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: rgba(122,127,150,0.15);
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  cursor: help;
+  margin-left: 5px;
+  line-height: 1;
+  flex-shrink: 0;
+  border: 1px solid rgba(122,127,150,0.2);
+  transition: background var(--dur-base), color var(--dur-base);
+}
+
+.kpi-tooltip:hover {
+  background: rgba(79, 110, 247, 0.2);
+  color: var(--text-primary);
+  border-color: rgba(79, 110, 247, 0.4);
+}
+
+.kpi-tooltip__bubble {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 240px;
+  background: var(--bg-card-raised);
+  border: 1px solid var(--border-hover);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-size: 11.5px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  text-transform: none;
+  letter-spacing: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-xl);
+  transition: opacity var(--dur-base) var(--ease-out),
+              transform var(--dur-base) var(--ease-out);
+  pointer-events: none;
+  white-space: normal;
+  transform-origin: bottom center;
+}
+
+.kpi-tooltip:hover .kpi-tooltip__bubble {
+  visibility: visible;
+  opacity: 1;
+}
+
+.kpi-tooltip__bubble::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--border-hover);
+}
+
+/* CV explainer strip */
+.cv-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 12px 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.cv-strip__item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.cv-strip__item strong { color: var(--text-secondary); }
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .kpi-grid--accuracy { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 900px) {
+  .kpi-grid--headline,
+  .kpi-grid--accuracy { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 540px) {
+  .kpi-grid--headline,
+  .kpi-grid--accuracy { grid-template-columns: 1fr; }
+}

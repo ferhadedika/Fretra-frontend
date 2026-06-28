@@ -1,0 +1,94 @@
+.controls-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+}
+
+.controls-row {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.controls-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.controls-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.controls-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.controls-pill {
+  background: var(--bg-card-raised);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.controls-pill:hover:not(:disabled) {
+  border-color: var(--border-hover);
+  color: var(--text-secondary);
+}
+
+.controls-pill.is-active {
+  background: rgba(33, 113, 245, 0.12);
+  border-color: var(--accent-blue);
+  color: var(--accent-blue-bright);
+}
+
+.controls-pill:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.controls-run-btn {
+  margin-left: auto;
+  background: var(--accent-blue);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 22px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.controls-run-btn:hover:not(:disabled) {
+  background: var(--accent-blue-bright);
+}
+
+.controls-run-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .controls-row {
+    gap: 16px;
+  }
+  .controls-run-btn {
+    margin-left: 0;
+    width: 100%;
+  }
+}

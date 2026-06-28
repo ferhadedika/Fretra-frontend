@@ -1,0 +1,177 @@
+/* ── App Shell ── */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+.app-main {
+  flex: 1;
+  max-width: 1340px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 28px 32px 72px;
+}
+
+/* Primary layout: main content + sidebar */
+.app-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 20px;
+  align-items: start;
+}
+
+.app-section-gap {
+  height: 28px;
+}
+
+/* Section eyebrow label */
+.app-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.app-section-header__label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.app-section-header__line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+}
+
+/* Loading state */
+.app-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 60vh;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.app-loading__spinner {
+  width: 28px;
+  height: 28px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent-blue);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Error banner */
+.app-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--accent-red-dim);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 13px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Base card — the premium foundation */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  transition: border-color var(--dur-base) var(--ease-in-out),
+              box-shadow var(--dur-base) var(--ease-in-out);
+}
+
+.card:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Inset highlight at top edge — premium glass feel */
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 16px;
+  right: 16px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  pointer-events: none;
+}
+
+.card { position: relative; }
+
+/* Card variants */
+.card--padded  { padding: 20px 22px; }
+.card--compact { padding: 14px 16px; }
+.card--flush   { padding: 0; overflow: hidden; }
+
+/* Raised surface (modals, dropdowns) */
+.surface-raised {
+  background: var(--bg-card-raised);
+  border: 1px solid var(--border-hover);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ── Stat / value display ── */
+.stat-value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.stat-value--xl  { font-size: 36px; }
+.stat-value--lg  { font-size: 28px; }
+.stat-value--md  { font-size: 22px; }
+.stat-value--sm  { font-size: 16px; }
+
+/* ── Badge / tag ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.badge--green  { background: var(--accent-green-dim); color: #10b77f; border: 1px solid rgba(16,183,127,0.3); }
+.badge--red    { background: var(--accent-red-dim);   color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+.badge--amber  { background: var(--accent-amber-dim); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+.badge--blue   { background: var(--accent-blue-dim);  color: var(--accent-blue); border: 1px solid rgba(79,110,247,0.3); }
+.badge--neutral{ background: rgba(122,127,150,0.1); color: var(--text-muted); border: 1px solid rgba(122,127,150,0.2); }
+.badge--violet { background: var(--accent-violet-dim); color: var(--accent-violet); border: 1px solid rgba(139,92,246,0.3); }
+
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+  .app-main-grid { grid-template-columns: 1fr 260px; }
+}
+
+@media (max-width: 900px) {
+  .app-main-grid { grid-template-columns: 1fr; }
+  .app-main      { padding: 20px 16px 56px; }
+}
