@@ -1,12 +1,14 @@
 /**
  * src/hooks/useBaselines.js
  * ==========================
- * Fetches the last 52 weeks of SCFI from Supabase and computes
- * live baseline forecasts for the current week:
+ * Fetches recent SCFI history from Supabase and computes live baseline
+ * forecasts for the current week:
  *   - Naïve (last value)
- *   - MA4 (4-week moving average)
- *   - EWM (exponential weighted mean, α=0.3)
- *   - Seasonal Naïve (value from 52 weeks ago)
+ *   - MA4 (last 4 rows' average)
+ *   - EWM (exponential weighted mean, α=0.3, over fetched history)
+ *   - Seasonal Naïve (value from exactly 52 calendar weeks ago, found by
+ *     date - NOT by counting back 52 rows, since scfi_weekly's row
+ *     cadence isn't consistently 1-row-per-week throughout its history)
  */
 
 import { useState, useEffect } from "react";
@@ -34,6 +36,26 @@ function ma(values, n = 4) {
   return slice.reduce((a, b) => a + b, 0) / slice.length;
 }
 
+/**
+ * Finds the row whose date is closest to `targetDate`. Needed because
+ * scfi_weekly's row cadence isn't reliably 1-row-per-week throughout its
+ * history (a stretch of the table has alternating 3/4-day gaps instead of
+ * 7 - a scraper data artifact), so "N rows back" is NOT the same as
+ * "N weeks back". Only a real calendar-date lookup is robust to that.
+ */
+function closestRowByDate(sortedRows, targetDate) {
+  let best = null;
+  let bestDiffMs = Infinity;
+  for (const row of sortedRows) {
+    const diff = Math.abs(new Date(row.date) - targetDate);
+    if (diff < bestDiffMs) {
+      bestDiffMs = diff;
+      best = row;
+    }
+  }
+  return best;
+}
+
 export function useBaselines() {
   const [baselines, setBaselines] = useState(null);
   const [history,   setHistory]   = useState([]);
@@ -50,12 +72,18 @@ export function useBaselines() {
       try {
         setLoading(true);
 
-        // Fetch the most recent 52 weeks (descending), then re-sort ascending
+        // Fetch a generous 200-row window (descending), then re-sort
+        // ascending. Deliberately NOT just "52 rows" - part of this
+        // table's history has doubled row density (alternating 3/4-day
+        // gaps instead of 7), so counting rows back doesn't reliably land
+        // 52 CALENDAR weeks back. 200 rows comfortably covers 52 weeks
+        // even through that denser stretch; the actual 52-week lookup
+        // below is done by calendar date, not row count.
         const { data, error: sbErr } = await supabase
           .from("scfi_weekly")
           .select("date, scfi")
           .order("date", { ascending: false })
-          .limit(52);
+          .limit(200);
 
         if (sbErr) throw sbErr;
         if (!data || data.length === 0) {
@@ -70,7 +98,16 @@ export function useBaselines() {
 
         const values   = sorted.map((r) => r.scfi);
         const last     = values[values.length - 1];
-        const seasonal = values.length >= 52 ? values[0] : last;
+
+        // True "52 weeks ago" by calendar date, not row count (see
+        // closestRowByDate's docstring for why row count isn't safe here).
+        const latestDate = new Date(sorted[sorted.length - 1].date);
+        const targetDate = new Date(latestDate);
+        targetDate.setDate(targetDate.getDate() - 364);
+        const earliestDate = new Date(sorted[0].date);
+        const seasonal = earliestDate <= targetDate
+          ? closestRowByDate(sorted, targetDate).scfi
+          : last;
 
         setBaselines({
           naive:          { label: "Naïve",                   forecast: last,          color: "#94a3b8" },

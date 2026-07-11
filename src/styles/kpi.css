@@ -153,6 +153,18 @@
   line-height: 1.4;
 }
 
+.kpi-card__sub--date {
+  font-size: 11.5px;
+}
+
+.kpi-card__date {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.2px;
+}
+
 /* Delta */
 .kpi-card__delta {
   display: inline-flex;

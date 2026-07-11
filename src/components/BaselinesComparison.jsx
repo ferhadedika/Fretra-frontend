@@ -18,8 +18,13 @@ function fmt(v, d = 2, s = "") {
   return `${Number(v).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d })}${s}`;
 }
 
+function compactNumber(v) {
+  if (v === null || v === undefined) return "";
+  return Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 });
+}
+
 function ImprovementBadge({ value }) {
-  if (value === null || value === undefined) return <span style={{ color: "var(--text-dim)" }}>—</span>;
+  if (value === null || value === undefined) return <span style={{ color: "var(--text-dim)" }}>N/A</span>;
   const positive = value > 0;
   return (
     <span style={{
@@ -54,7 +59,19 @@ export function BaselineComparison({ forecast, metrics, activeModelId, models })
     }));
 
     // Add a forecast point one week after the last date
-    if (baselines && currentScfi !== undefined) {
+    if (baselines && currentScfi !== undefined && hist.length) {
+      // Seed every series at the cutoff row with the current actual SCFI
+      // first - connectNulls can't draw a line for a series that only
+      // ever has ONE data point (the forecast dot), which is what made
+      // every baseline/model marker render as a disconnected floating
+      // dot instead of a line reaching from "now" to the forecast.
+      const cutoffRow = hist[hist.length - 1];
+      cutoffRow.model = currentScfi;
+      cutoffRow.naive = currentScfi;
+      cutoffRow.ma4 = currentScfi;
+      cutoffRow.ewm = currentScfi;
+      cutoffRow.seasonal_naive = currentScfi;
+
       const lastDate = new Date(history[history.length - 1].date);
       lastDate.setDate(lastDate.getDate() + 7);
       const forecastDate = lastDate.toISOString().split("T")[0];
@@ -127,7 +144,7 @@ export function BaselineComparison({ forecast, metrics, activeModelId, models })
   return (
     <>
       <div className="section-header">
-        <span className="section-title">Baseline Comparison — Live W+1 Forecasts</span>
+        <span className="section-title">Baseline Comparison · Live W+1 Forecasts</span>
         <div className="section-line" />
       </div>
 
@@ -191,34 +208,38 @@ export function BaselineComparison({ forecast, metrics, activeModelId, models })
       {/* Chart */}
       {chartData.length > 0 && (
         <div className="chart-card" style={{ marginBottom: 20 }}>
-          <div className="chart-card__title">W+1 Forecast — Model vs All Baselines</div>
+          <div className="chart-card__title">W+1 Forecast · Model vs All Baselines</div>
           <div className="chart-card__sub">Last 12 weeks of actuals + next-week forecast for each method</div>
           <ResponsiveContainer width="100%" height={360}>
-            <ComposedChart data={chartData} margin={{ top: 10, right: 60, left: 0, bottom: 0 }}>
+            <ComposedChart data={chartData} margin={{ top: 10, right: 60, left: 4, bottom: 0 }}>
               <CartesianGrid stroke="#1e2d4a" strokeWidth={0.5} vertical={false} />
               <XAxis
                 dataKey="date"
                 type="category"
                 domain={xDomain}
                 allowDuplicatedCategory={false}
-                tick={{ fill: "#4f6180", fontSize: 10 }}
+                tick={{ fill: "#4f6180", fontSize: 10.5 }}
                 tickLine={false}
                 axisLine={{ stroke: "#1e2d4a" }}
                 minTickGap={30}
+                padding={{ left: 8, right: 8 }}
               />
               <YAxis
-                tick={{ fill: "#4f6180", fontSize: 10 }}
+                tick={{ fill: "#4f6180", fontSize: 10.5 }}
                 tickLine={false}
                 axisLine={{ stroke: "#1e2d4a" }}
                 domain={["auto", "auto"]}
+                tickFormatter={compactNumber}
+                width={54}
               />
               <Tooltip
-                contentStyle={{ background: "#111827", border: "1px solid #1e2d4a", borderRadius: 8 }}
-                labelStyle={{ color: "#e8ecf4" }}
+                contentStyle={{ background: "#16181f", border: "1px solid #2a2d3a", borderRadius: 10, boxShadow: "0 16px 48px rgba(0,0,0,.75)" }}
+                labelStyle={{ color: "#e8ecf4", fontWeight: 700, marginBottom: 6 }}
                 itemStyle={{ color: "#c4cee0" }}
+                cursor={{ stroke: "#3d4a68", strokeWidth: 1, strokeDasharray: "3 3" }}
                 formatter={(v) => fmt(v)}
               />
-              <Legend wrapperStyle={{ fontSize: 11, color: "#8ba0be", paddingTop: 12 }} />
+              <Legend wrapperStyle={{ fontSize: 11, color: "#8ba0be", paddingTop: 12 }} iconType="plainline" />
               {cutoffDate && (
                 <ReferenceLine
                   x={cutoffDate}
@@ -227,10 +248,10 @@ export function BaselineComparison({ forecast, metrics, activeModelId, models })
                   label={{ value: "Cutoff", fill: "#c93a3a", fontSize: 10, position: "top" }}
                 />
               )}
-              <Line type="monotone" dataKey="historical" name="Historical SCFI" stroke="#e8ecf4" strokeWidth={1.5} dot={false} connectNulls isAnimationActive={false} />
-              <Line type="monotone" dataKey="model" name={`${modelLabel} (W+1)`} stroke={modelColor} strokeWidth={2.5} dot={{ r: 5, fill: "#fff", stroke: modelColor, strokeWidth: 2 }} connectNulls isAnimationActive={false} />
+              <Line type="monotone" dataKey="historical" name="Historical SCFI" stroke="#e8ecf4" strokeWidth={1.5} dot={false} activeDot={{ r: 4, fill: "#e8ecf4", stroke: "#0c0d11", strokeWidth: 2 }} connectNulls isAnimationActive={false} />
+              <Line type="monotone" dataKey="model" name={`${modelLabel} (W+1)`} stroke={modelColor} strokeWidth={2.5} dot={{ r: 5, fill: "#fff", stroke: modelColor, strokeWidth: 2 }} activeDot={{ r: 7, fill: modelColor, stroke: "#0c0d11", strokeWidth: 2 }} connectNulls isAnimationActive={false} />
               {baselines && Object.entries(baselines).map(([id, b]) => (
-                <Line key={id} type="monotone" dataKey={id} name={b.label} stroke={b.color} strokeWidth={1.5} strokeDasharray="5 3" dot={{ r: 4, fill: "#fff", stroke: b.color, strokeWidth: 2 }} connectNulls isAnimationActive={false} />
+                <Line key={id} type="monotone" dataKey={id} name={b.label} stroke={b.color} strokeWidth={1.5} strokeDasharray="5 3" dot={{ r: 4, fill: "#fff", stroke: b.color, strokeWidth: 2 }} activeDot={{ r: 6, fill: b.color, stroke: "#0c0d11", strokeWidth: 2 }} connectNulls isAnimationActive={false} />
               ))}
             </ComposedChart>
           </ResponsiveContainer>
@@ -239,7 +260,7 @@ export function BaselineComparison({ forecast, metrics, activeModelId, models })
 
       {/* Metrics comparison table */}
       <div className="chart-card">
-        <div className="chart-card__title">CV Performance — Models vs Baselines</div>
+        <div className="chart-card__title">CV Performance · Models vs Baselines</div>
         <div className="chart-card__sub">
           {baselineRows.length > 0
             ? "Walk-forward cross-validated metrics. % improvement is vs Naïve benchmark."

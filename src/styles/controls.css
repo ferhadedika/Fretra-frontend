@@ -1,8 +1,9 @@
+/* Forecast controls: segmented pills + primary action */
+
 .controls-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px 18px;
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
 .controls-row {
@@ -21,7 +22,7 @@
 .controls-label {
   font-size: 9.5px;
   font-weight: 700;
-  letter-spacing: 1.5px;
+  letter-spacing: 1.8px;
   text-transform: uppercase;
   color: var(--text-dim);
   white-space: nowrap;
@@ -29,31 +30,47 @@
 
 .controls-pills {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   flex-wrap: wrap;
+  padding: 3px;
+  background: var(--bg-app);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,.35);
 }
 
 .controls-pill {
-  background: var(--bg-card-raised);
-  border: 1px solid var(--border);
+  position: relative;
+  background: transparent;
+  border: 1px solid transparent;
   color: var(--text-muted);
   font-size: 12.5px;
   font-weight: 600;
   padding: 6px 14px;
   border-radius: 7px;
   cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color var(--dur-base) var(--ease-in-out),
+    color var(--dur-base) var(--ease-in-out),
+    background var(--dur-base) var(--ease-in-out),
+    box-shadow var(--dur-base) var(--ease-in-out),
+    transform var(--dur-fast) var(--ease-out);
 }
 
-.controls-pill:hover:not(:disabled) {
-  border-color: var(--border-hover);
+.controls-pill:hover:not(:disabled):not(.is-active) {
   color: var(--text-secondary);
+  background: var(--bg-card-raised);
+}
+
+.controls-pill:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .controls-pill.is-active {
-  background: rgba(33, 113, 245, 0.12);
-  border-color: var(--accent-blue);
-  color: var(--accent-blue-bright);
+  background: linear-gradient(180deg, rgba(79,110,247,.16), rgba(79,110,247,.08));
+  border-color: rgba(79,110,247,.45);
+  color: #9db1ff;
+  box-shadow: 0 0 12px rgba(79,110,247,.15), inset 0 1px 0 rgba(255,255,255,.06);
 }
 
 .controls-pill:disabled {
@@ -62,20 +79,56 @@
 }
 
 .controls-run-btn {
+  position: relative;
+  overflow: hidden;
   margin-left: auto;
-  background: var(--accent-blue);
+  background: linear-gradient(135deg, #4f6ef7 0%, #6d5cf6 100%);
   color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 9px 22px;
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 9px;
+  padding: 10px 26px;
   font-size: 13px;
   font-weight: 700;
+  letter-spacing: 0.3px;
   cursor: pointer;
-  transition: background 0.15s ease, opacity 0.15s ease;
+  box-shadow:
+    0 4px 16px rgba(79,110,247,.30),
+    inset 0 1px 0 rgba(255,255,255,.18);
+  transition:
+    box-shadow var(--dur-base) var(--ease-in-out),
+    transform var(--dur-fast) var(--ease-out),
+    filter var(--dur-base) var(--ease-in-out),
+    opacity var(--dur-base) var(--ease-in-out);
+}
+
+/* shine sweep */
+.controls-run-btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -80%;
+  width: 55%;
+  height: 100%;
+  background: linear-gradient(105deg, transparent, rgba(255,255,255,.22), transparent);
+  transform: skewX(-18deg);
+  transition: left .55s var(--ease-out);
+  pointer-events: none;
 }
 
 .controls-run-btn:hover:not(:disabled) {
-  background: var(--accent-blue-bright);
+  filter: brightness(1.08);
+  box-shadow:
+    0 6px 24px rgba(79,110,247,.45),
+    inset 0 1px 0 rgba(255,255,255,.2);
+  transform: translateY(-1px);
+}
+
+.controls-run-btn:hover:not(:disabled)::after {
+  left: 120%;
+}
+
+.controls-run-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
 }
 
 .controls-run-btn:disabled {
@@ -85,7 +138,7 @@
 
 @media (max-width: 640px) {
   .controls-row {
-    gap: 16px;
+    gap: 14px;
   }
   .controls-run-btn {
     margin-left: 0;

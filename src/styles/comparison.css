@@ -1,8 +1,11 @@
 .comp-empty {
   color: var(--text-dim);
   font-size: 13px;
-  padding: 32px 0;
+  padding: 48px 0;
   text-align: center;
+  border: 1px dashed var(--border-hover);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
 }
 
 .comp-summary-strip {
@@ -13,10 +16,34 @@
 }
 
 .comp-summary-card {
+  position: relative;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 14px 16px;
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  transition:
+    border-color var(--dur-base) var(--ease-in-out),
+    box-shadow var(--dur-base) var(--ease-in-out),
+    transform var(--dur-base) var(--ease-in-out);
+}
+
+.comp-summary-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 10px;
+  right: 10px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  pointer-events: none;
+}
+
+.comp-summary-card:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-1px);
 }
 
 .comp-summary-label {
@@ -77,16 +104,22 @@
 .cv-table thead th:first-child { text-align: left; }
 
 .cv-table tbody td {
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--bg-card-raised);
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border-subtle);
   text-align: right;
   color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  transition: background var(--dur-fast) var(--ease-in-out);
 }
 
 .cv-table tbody td:first-child { text-align: left; }
 
-.cv-table tbody tr:hover { background: #141d33; }
-.cv-table tbody tr.is-active-row { background: rgba(33,113,245,.06); }
+.cv-table tbody tr { transition: background var(--dur-fast) var(--ease-in-out); }
+.cv-table tbody tr:hover { background: var(--bg-card-raised); }
+.cv-table tbody tr.is-active-row {
+  background: rgba(79,110,247,.07);
+  box-shadow: inset 2px 0 0 var(--accent-blue);
+}
 
 /* Forecast comparison table */
 .fc-table {
@@ -102,20 +135,25 @@
   letter-spacing: 1px;
   text-transform: uppercase;
   color: var(--text-dim);
-  padding: 8px 10px;
+  padding: 9px 10px;
   border-bottom: 1px solid var(--border);
-  background: #0d1424;
+  background: var(--bg-card-raised);
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .fc-table tbody td {
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--bg-card-raised);
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border-subtle);
   text-align: right;
   color: var(--text-secondary);
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
-.fc-table tbody tr:hover { background: #141d33; }
+.fc-table tbody tr { transition: background var(--dur-fast) var(--ease-in-out); }
+.fc-table tbody tr:hover { background: var(--bg-card-raised); }
 .fc-table__week { text-align: left !important; color: var(--text-muted) !important; font-weight: 600; }
 
 .cell-pos { color: #0d9e6a; font-weight: 600; }

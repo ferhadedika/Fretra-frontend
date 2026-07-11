@@ -1,28 +1,78 @@
+/* Projections ledger: weekly forecast breakdown */
+
 .ledger-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-md);
   padding: 18px 20px;
   height: 100%;
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
 }
 
-.ledger-card__title {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-primary);
+.ledger-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  pointer-events: none;
+}
+
+.ledger-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 14px;
 }
 
+.ledger-card__title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.2px;
+}
+
+.ledger-card__count {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 2px 8px;
+  background: var(--bg-card-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+}
+
 .ledger-row {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--bg-card-raised);
+  padding: 10px 10px;
+  margin: 0 -10px;
+  border-radius: var(--radius-sm);
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background var(--dur-base) var(--ease-in-out);
+  overflow: hidden;
 }
 
 .ledger-row:last-child {
   border-bottom: none;
+}
+
+.ledger-row:hover {
+  background: var(--bg-card-raised);
+}
+
+.ledger-row__left,
+.ledger-row__right {
+  position: relative;
+  z-index: 1;
 }
 
 .ledger-row__week {
@@ -35,6 +85,7 @@
   font-size: 10.5px;
   color: var(--text-dim);
   margin-top: 2px;
+  font-variant-numeric: tabular-nums;
 }
 
 .ledger-row__right {
@@ -42,17 +93,42 @@
 }
 
 .ledger-row__val {
-  font-size: 14px;
+  font-size: 14.5px;
   font-weight: 700;
   color: var(--text-primary);
   font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.2px;
 }
 
 .ledger-row__delta {
   font-size: 11px;
   font-weight: 600;
   margin-top: 2px;
+  font-variant-numeric: tabular-nums;
 }
 
 .ledger-row__delta.is-pos { color: var(--accent-green); }
 .ledger-row__delta.is-neg { color: var(--accent-red); }
+
+/* magnitude bar along the bottom of each row */
+.ledger-row__bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  border-radius: var(--radius-pill);
+  opacity: 0.55;
+  transition: width var(--dur-slow) var(--ease-out), opacity var(--dur-base);
+  z-index: 0;
+}
+
+.ledger-row:hover .ledger-row__bar { opacity: 1; }
+
+.ledger-row__bar.is-pos {
+  background: linear-gradient(90deg, var(--accent-green), transparent);
+}
+
+.ledger-row__bar.is-neg {
+  background: linear-gradient(90deg, var(--accent-red), transparent);
+}

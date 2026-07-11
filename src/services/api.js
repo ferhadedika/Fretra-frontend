@@ -1,8 +1,15 @@
+import { supabase } from "../supabaseClient";
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 async function request(path, options = {}) {
+  const { data: { session } } = await supabase.auth.getSession();
+
   const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+    },
     ...options,
   });
 
@@ -47,6 +54,17 @@ export async function fetchShap(modelId, horizonWeeks = 8) {
 
 export async function fetchMetrics() {
   return request("/api/metrics");
+}
+
+export async function fetchRollingLatest(horizonWeeks = 12) {
+  return request(`/api/rolling-forecast/latest?horizon_weeks=${horizonWeeks}`);
+}
+
+export async function runRollingForecast(force = true) {
+  return request("/api/rolling-forecast/run", {
+    method: "POST",
+    body: JSON.stringify({ force }),
+  });
 }
 
 export async function fetchHealth() {

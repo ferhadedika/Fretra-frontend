@@ -1,9 +1,10 @@
 .fold-empty {
   background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 24px 20px;
+  border: 1px dashed var(--border-hover);
+  border-radius: var(--radius-md);
+  padding: 40px 24px;
   color: var(--text-dim);
   font-size: 13px;
   line-height: 1.6;
+  text-align: center;
 }

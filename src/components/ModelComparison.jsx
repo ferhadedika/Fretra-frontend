@@ -1,7 +1,9 @@
+import { useMemo, useState } from "react";
 import {
   ResponsiveContainer, ComposedChart, Line, XAxis, YAxis,
-  CartesianGrid, Tooltip, Legend, ReferenceLine,
+  CartesianGrid, Tooltip, Legend, ReferenceLine, Brush,
 } from "recharts";
+import { RangeSelector, sliceByRange } from "./ui/fx";
 import "../styles/comparison.css";
 
 const MODEL_COLORS = {
@@ -23,31 +25,53 @@ function trendArrow(delta) {
   return { arrow: "→", cls: "trend-flat" };
 }
 
-export function ModelComparison({ models, metrics, historical, forecast, activeModelId }) {
+function compactNumber(v) {
+  if (v === null || v === undefined) return "";
+  return Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 });
+}
+
+export function ModelComparison({ models, metrics, historical, forecast, activeModelId, forecastsByModel, horizonWeeks }) {
+  const [range, setRange] = useState("2y");
+
+  // Live rolling forecast for every model, not the frozen training-time
+  // snapshot metrics.forecasts used to carry - keeps this tab consistent
+  // with the Core Forecast tab.
+  const forecasts = forecastsByModel || {};
+  const currentScfi = forecast?.current_scfi;
+  const cutoffDate = forecast?.cutoff_date;
+
+  // Overlay chart data: historical actuals + every model's forecast line,
+  // each attached under its own dataKey (m.id) starting from the cutoff.
+  const fullChartData = useMemo(() => {
+    if (!forecast) return [];
+    const histPoints = historical.map((p) => ({ date: p.date, historical: p.scfi }));
+    const seeded = histPoints.map((p) =>
+      p.date === cutoffDate
+        ? { ...p, ...Object.fromEntries(models.map((m) => [m.id, p.historical])) }
+        : p
+    );
+    const byDate = new Map(seeded.map((p) => [p.date, p]));
+    models.forEach((m) => {
+      const arr = forecasts[m.id] || [];
+      arr.forEach((pt) => {
+        const existing = byDate.get(pt.date) || { date: pt.date };
+        existing[m.id] = pt.forecast;
+        byDate.set(pt.date, existing);
+      });
+    });
+    return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
+  }, [historical, forecasts, models, cutoffDate, forecast]);
+
+  const chartData = useMemo(() => sliceByRange(fullChartData, range), [fullChartData, range]);
+  const brushStart = Math.max(0, chartData.length - Math.min(chartData.length, 60));
+
   if (!forecast || !metrics) {
     return <div className="comp-empty">Run a forecast first to see model comparison.</div>;
   }
 
-  const forecasts = metrics.forecasts || {};
-  const currentScfi = forecast.current_scfi;
-  const cutoffDate = forecast.cutoff_date;
-
-  // Build overlay chart data
-  const histPoints = historical.map((p) => ({ date: p.date, historical: p.scfi }));
-  const chartData = [...histPoints];
-
-  // Add per-model forecast traces (attach to date keys)
-  const modelForecastMap = {};
-  models.forEach((m) => {
-    const arr = forecasts[m.id] || [];
-    arr.forEach((pt) => {
-      modelForecastMap[`${m.id}_${pt.week}`] = pt.forecast;
-    });
-  });
-
   // Build summary rows for the table
-  const horizonWeeks = (forecasts[models[0]?.id] || []).length || 8;
-  const weekLabels = Array.from({ length: horizonWeeks }, (_, i) => `Week +${i + 1}`);
+  const displayHorizon = horizonWeeks || (forecasts[models[0]?.id] || []).length || 8;
+  const weekLabels = Array.from({ length: displayHorizon }, (_, i) => `Week +${i + 1}`);
 
   // Per-model forecast rows for the table
   const modelRows = models.map((m) => {
@@ -73,7 +97,7 @@ export function ModelComparison({ models, metrics, historical, forecast, activeM
   return (
     <>
       <div className="section-header">
-        <span className="section-title">All-Model Overlay — 8-Week Horizon</span>
+        <span className="section-title">All-Model Overlay · {displayHorizon}-Week Horizon</span>
         <div className="section-line" />
       </div>
 
@@ -118,28 +142,51 @@ export function ModelComparison({ models, metrics, historical, forecast, activeM
       {/* Chart + CV table side by side */}
       <div className="comp-main-grid">
         <div className="chart-card">
-          <div className="chart-card__title">Model Forecast Divergence</div>
-          <div className="chart-card__sub">All models overlaid from cutoff date</div>
+          <div className="chart-card__header">
+            <div className="chart-card__meta">
+              <div className="chart-card__title">Model Forecast Divergence</div>
+              <div className="chart-card__sub">Every model's forecast overlaid from the cutoff date</div>
+            </div>
+            <RangeSelector value={range} onChange={setRange} />
+          </div>
           <ResponsiveContainer width="100%" height={380}>
-            <ComposedChart data={histPoints} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+            <ComposedChart data={chartData} margin={{ top: 10, right: 24, left: 4, bottom: 0 }}>
               <CartesianGrid stroke="#1e2d4a" strokeWidth={0.5} vertical={false} />
-              <XAxis dataKey="date" tick={{ fill: "#4f6180", fontSize: 10 }} tickLine={false} axisLine={{ stroke: "#1e2d4a" }} minTickGap={40} />
-              <YAxis tick={{ fill: "#4f6180", fontSize: 10 }} tickLine={false} axisLine={{ stroke: "#1e2d4a" }} domain={["auto", "auto"]} />
-              <Tooltip contentStyle={{ background: "#111827", border: "1px solid #1e2d4a", borderRadius: 8 }} labelStyle={{ color: "#e8ecf4" }} itemStyle={{ color: "#c4cee0" }} />
-              <Legend wrapperStyle={{ fontSize: 11, color: "#8ba0be", paddingTop: 12 }} />
+              <XAxis dataKey="date" tick={{ fill: "#4f6180", fontSize: 10.5 }} tickLine={false} axisLine={{ stroke: "#1e2d4a" }} minTickGap={44} padding={{ left: 8, right: 8 }} />
+              <YAxis tick={{ fill: "#4f6180", fontSize: 10.5 }} tickLine={false} axisLine={{ stroke: "#1e2d4a" }} domain={["auto", "auto"]} tickFormatter={compactNumber} width={54} />
+              <Tooltip
+                contentStyle={{ background: "#16181f", border: "1px solid #2a2d3a", borderRadius: 10, boxShadow: "0 16px 48px rgba(0,0,0,.75)" }}
+                labelStyle={{ color: "#e8ecf4", fontWeight: 700, marginBottom: 6 }}
+                itemStyle={{ color: "#c4cee0" }}
+                cursor={{ stroke: "#3d4a68", strokeWidth: 1, strokeDasharray: "3 3" }}
+                formatter={(v) => v?.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+              />
+              <Legend wrapperStyle={{ fontSize: 11, color: "#8ba0be", paddingTop: 12 }} iconType="plainline" />
               <ReferenceLine x={cutoffDate} stroke="#c93a3a" strokeDasharray="4 4" label={{ value: "Cutoff", fill: "#c93a3a", fontSize: 10, position: "top" }} />
-              <Line type="monotone" dataKey="historical" name="Historical SCFI" stroke="#e8ecf4" strokeWidth={1.5} dot={false} connectNulls isAnimationActive={false} />
+              <Line type="monotone" dataKey="historical" name="Historical SCFI" stroke="#e8ecf4" strokeWidth={1.5} dot={false} activeDot={{ r: 4, fill: "#e8ecf4", stroke: "#0c0d11", strokeWidth: 2 }} connectNulls isAnimationActive={false} />
               {models.map((m) => {
                 const arr = forecasts[m.id] || [];
                 if (!arr.length) return null;
-                return null; // recharts overlay handled below
+                const isActive = m.id === activeModelId;
+                return (
+                  <Line
+                    key={m.id}
+                    type="monotone"
+                    dataKey={m.id}
+                    name={m.label}
+                    stroke={MODEL_COLORS[m.id] || "#8ba0be"}
+                    strokeWidth={isActive ? 3 : 1.75}
+                    strokeOpacity={isActive ? 1 : 0.65}
+                    dot={{ r: 2.5, fill: "#fff", stroke: MODEL_COLORS[m.id] || "#8ba0be", strokeWidth: 1.5 }}
+                    activeDot={{ r: 6, fill: MODEL_COLORS[m.id] || "#8ba0be", stroke: "#0c0d11", strokeWidth: 2 }}
+                    connectNulls
+                    isAnimationActive={false}
+                  />
+                );
               })}
+              <Brush dataKey="date" height={24} travellerWidth={9} startIndex={brushStart} stroke="#323546" fill="#13141a" tickFormatter={() => ""} />
             </ComposedChart>
           </ResponsiveContainer>
-          {/* Overlay forecast lines using separate charts is tricky; show a note */}
-          <div style={{ fontSize: 11, color: "#4f6180", marginTop: 8 }}>
-            Switch models using the Model buttons above to overlay each forecast on the historical chart.
-          </div>
         </div>
 
         {/* CV Performance table */}
@@ -173,7 +220,7 @@ export function ModelComparison({ models, metrics, historical, forecast, activeM
 
       {/* 8-week forecast table — all models */}
       <div className="section-header" style={{ marginTop: 32 }}>
-        <span className="section-title">8-Week Forecast Table — All Models</span>
+        <span className="section-title">{displayHorizon}-Week Forecast Table · All Models</span>
         <div className="section-line" />
       </div>
 

@@ -215,3 +215,17 @@
   color: var(--text-dim);
   font-size: 13px;
 }
+
+/* Recharts Brush (zoom/pan scrubber) */
+.recharts-brush rect.recharts-brush-slide {
+  fill: rgba(79, 110, 247, 0.08);
+}
+
+.recharts-brush-traveller rect {
+  fill: var(--bg-card-raised);
+  stroke: var(--accent-blue);
+}
+
+.recharts-brush text {
+  fill: var(--text-dim);
+}

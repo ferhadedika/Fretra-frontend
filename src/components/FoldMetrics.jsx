@@ -52,7 +52,7 @@ export function FoldMetrics({ metrics, models, activeModelId }) {
       ) : (
         <>
           <div className="chart-card">
-            <div className="chart-card__title">Fold-by-Fold MAE — {activeModel?.label}</div>
+            <div className="chart-card__title">Fold-by-Fold MAE · {activeModel?.label}</div>
             <div className="chart-card__sub">Expanding walk-forward CV · {nSplits} folds</div>
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={foldRows} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
@@ -60,9 +60,10 @@ export function FoldMetrics({ metrics, models, activeModelId }) {
                 <XAxis dataKey="name" tick={{ fill: "#4f6180", fontSize: 10 }} axisLine={{ stroke: "#1e2d4a" }} tickLine={false} />
                 <YAxis tick={{ fill: "#4f6180", fontSize: 10 }} axisLine={{ stroke: "#1e2d4a" }} tickLine={false} />
                 <Tooltip
-                  contentStyle={{ background: "#111827", border: "1px solid #1e2d4a", borderRadius: 8 }}
-                  labelStyle={{ color: "#e8ecf4" }}
+                  contentStyle={{ background: "#16181f", border: "1px solid #2a2d3a", borderRadius: 10, boxShadow: "0 16px 48px rgba(0,0,0,.75)" }}
+                  labelStyle={{ color: "#e8ecf4", fontWeight: 700, marginBottom: 6 }}
                   itemStyle={{ color: "#c4cee0" }}
+                  cursor={{ fill: "rgba(255,255,255,.03)" }}
                   formatter={(v) => fmt(v)}
                 />
                 {meanMae != null && (
@@ -123,10 +124,10 @@ export function FoldMetrics({ metrics, models, activeModelId }) {
             <ResponsiveContainer width="100%" height={300}>
               <LineChart margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
                 <CartesianGrid stroke="#1e2d4a" strokeWidth={0.5} vertical={false} />
-                <XAxis type="number" dataKey="fold" domain={[1, nSplits]} tickCount={nSplits} tick={{ fill: "#4f6180", fontSize: 10 }} axisLine={{ stroke: "#1e2d4a" }} tickLine={false} label={{ value: "Fold", fill: "#4f6180", fontSize: 10, position: "bottom" }} />
-                <YAxis tick={{ fill: "#4f6180", fontSize: 10 }} axisLine={{ stroke: "#1e2d4a" }} tickLine={false} label={{ value: "MAE", fill: "#4f6180", fontSize: 10, angle: -90, position: "insideLeft" }} />
-                <Tooltip contentStyle={{ background: "#111827", border: "1px solid #1e2d4a", borderRadius: 8 }} labelStyle={{ color: "#e8ecf4" }} itemStyle={{ color: "#c4cee0" }} formatter={(v) => fmt(v, 1)} />
-                <Legend wrapperStyle={{ fontSize: 11, color: "#8ba0be", paddingTop: 8 }} />
+                <XAxis type="number" dataKey="fold" domain={[1, nSplits]} tickCount={nSplits} tick={{ fill: "#4f6180", fontSize: 10.5 }} axisLine={{ stroke: "#1e2d4a" }} tickLine={false} label={{ value: "Fold", fill: "#4f6180", fontSize: 10, position: "bottom" }} />
+                <YAxis tick={{ fill: "#4f6180", fontSize: 10.5 }} axisLine={{ stroke: "#1e2d4a" }} tickLine={false} label={{ value: "MAE", fill: "#4f6180", fontSize: 10, angle: -90, position: "insideLeft" }} width={54} />
+                <Tooltip contentStyle={{ background: "#16181f", border: "1px solid #2a2d3a", borderRadius: 10, boxShadow: "0 16px 48px rgba(0,0,0,.75)" }} labelStyle={{ color: "#e8ecf4", fontWeight: 700 }} itemStyle={{ color: "#c4cee0" }} cursor={{ stroke: "#3d4a68", strokeWidth: 1, strokeDasharray: "3 3" }} formatter={(v) => fmt(v, 1)} />
+                <Legend wrapperStyle={{ fontSize: 11, color: "#8ba0be", paddingTop: 8 }} iconType="plainline" />
                 {models.map((m) => {
                   const folds = metrics.fold_metrics?.[m.id] || [];
                   if (!folds.length) return null;
@@ -139,8 +140,10 @@ export function FoldMetrics({ metrics, models, activeModelId }) {
                       dataKey="MAE"
                       name={m.label}
                       stroke={MODEL_COLORS[m.id] || "#8ba0be"}
-                      strokeWidth={2}
-                      dot={{ r: 4 }}
+                      strokeWidth={m.id === activeModelId ? 3 : 1.75}
+                      strokeOpacity={m.id === activeModelId ? 1 : 0.65}
+                      dot={{ r: 3.5, fill: "#fff", stroke: MODEL_COLORS[m.id] || "#8ba0be", strokeWidth: 1.5 }}
+                      activeDot={{ r: 6, fill: MODEL_COLORS[m.id] || "#8ba0be", stroke: "#0c0d11", strokeWidth: 2 }}
                       isAnimationActive={false}
                     />
                   );

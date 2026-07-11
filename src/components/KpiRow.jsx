@@ -56,7 +56,9 @@ export function KpiRow({ forecast, metrics, activeModelId, models }) {
         <div className="kpi-card kpi-card--neutral">
           <div className="kpi-card__title">Current SCFI Index</div>
           <div className="kpi-card__value">{fmt(current_scfi)}</div>
-          <div className="kpi-card__sub">Ground truth — {cutoff_date}</div>
+          <div className="kpi-card__sub kpi-card__sub--date">
+            Ground truth as of <span className="kpi-card__date">{cutoff_date}</span>
+          </div>
         </div>
 
         <div className="kpi-card kpi-card--blue">
@@ -80,7 +82,7 @@ export function KpiRow({ forecast, metrics, activeModelId, models }) {
 
       {/* Row 2 — accuracy KPIs */}
       <div className="section-header" style={{ marginBottom: 14 }}>
-        <span className="section-title">Model Accuracy — {model.label} (Cross-Validated)</span>
+        <span className="section-title">Model Accuracy · {model.label} (Cross-Validated)</span>
         <div className="section-line" />
       </div>
 
@@ -88,7 +90,7 @@ export function KpiRow({ forecast, metrics, activeModelId, models }) {
         <div className="kpi-card kpi-card--mini">
           <div className="kpi-card__title">
             MAE
-            <Tooltip text="Mean Absolute Error — the average size of the model's miss, in SCFI index points, ignoring direction. Lower is better." />
+            <Tooltip text="Mean Absolute Error: the average size of the model's miss, in SCFI index points, ignoring direction. Lower is better." />
           </div>
           <div className="kpi-card__value kpi-card__value--orange">{fmt(mae, 1)}</div>
           <div className="kpi-card__sub">Avg. error, original SCFI scale</div>
@@ -97,7 +99,7 @@ export function KpiRow({ forecast, metrics, activeModelId, models }) {
         <div className="kpi-card kpi-card--mini">
           <div className="kpi-card__title">
             RMSE
-            <Tooltip text="Root Mean Squared Error — like MAE, but penalizes large misses more heavily. A big gap between RMSE and MAE means occasional very large errors." />
+            <Tooltip text="Root Mean Squared Error: like MAE, but penalizes large misses more heavily. A big gap between RMSE and MAE means occasional very large errors." />
           </div>
           <div className="kpi-card__value kpi-card__value--orange">{fmt(rmse, 1)}</div>
           <div className="kpi-card__sub">Penalizes large misses more</div>
@@ -106,7 +108,7 @@ export function KpiRow({ forecast, metrics, activeModelId, models }) {
         <div className="kpi-card kpi-card--mini">
           <div className="kpi-card__title">
             MAPE
-            <Tooltip text="Mean Absolute Percentage Error — the average error as a percentage of actual SCFI value. Easier to compare across different rate levels than MAE." />
+            <Tooltip text="Mean Absolute Percentage Error: the average error as a percentage of actual SCFI value. Easier to compare across different rate levels than MAE." />
           </div>
           <div className="kpi-card__value kpi-card__value--orange">{fmt(mape, 2, "%")}</div>
           <div className="kpi-card__sub">Error as % of actual rate</div>
@@ -115,10 +117,10 @@ export function KpiRow({ forecast, metrics, activeModelId, models }) {
         <div className="kpi-card kpi-card--mini">
           <div className="kpi-card__title">
             R²
-            <Tooltip text="R-squared — the share of week-to-week SCFI movement the model explains, from 0 to 1. Closer to 1 is better." />
+            <Tooltip text="R-squared: the share of week-to-week SCFI movement the model explains, from 0 to 1. Closer to 1 is better." />
           </div>
           <div className="kpi-card__value kpi-card__value--orange">{fmt(r2, 3)}</div>
-          <div className="kpi-card__sub">Variance explained (0–1)</div>
+          <div className="kpi-card__sub">Variance explained (0 to 1)</div>
         </div>
 
         {/* 5th card: ensemble blend or CV config */}
@@ -143,7 +145,7 @@ export function KpiRow({ forecast, metrics, activeModelId, models }) {
           <div className="kpi-card kpi-card--mini" style={{ borderColor: "rgba(164,99,242,.35)" }}>
             <div className="kpi-card__title" style={{ color: "#a463f2" }}>
               CV Configuration
-              <Tooltip text="How the model's accuracy above was actually measured — see the Fold-Level CV Metrics tab for the full breakdown." />
+              <Tooltip text="How the model's accuracy above was actually measured. See the Fold-Level CV Metrics tab for the full breakdown." />
             </div>
             <div className="kpi-card__value" style={{ color: "#a463f2" }}>{nSplits}</div>
             <div className="kpi-card__sub">{nSplits} expanding walk-forward folds</div>
@@ -155,7 +157,7 @@ export function KpiRow({ forecast, metrics, activeModelId, models }) {
       <div className="cv-strip">
         <div className="cv-strip__item">
           <strong>TimeSeriesSplit</strong>
-          <Tooltip text="A cross-validation method built for time-ordered data: each fold trains only on the past and tests on the period right after it — never on future data." />
+          <Tooltip text="A cross-validation method built for time-ordered data: each fold trains only on the past and tests on the period right after it, never on future data." />
         </div>
         <div className="cv-strip__item">
           <strong>Expanding Walk-Forward Folds</strong>

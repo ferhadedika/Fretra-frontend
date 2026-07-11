@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { FEATURE_META } from "../utils/featureMeta";
+import { FEATURE_META, FEATURE_CATEGORY } from "../utils/featureMeta";
 
 const T = {
   bg:       "#0c0d11",
@@ -30,6 +30,16 @@ const SOURCE_COLORS = {
   "Derived (calendar)":                                 { bg: "rgba(122,127,150,.1)", border: "rgba(122,127,150,.3)", color: "#7a7f96" },
 };
 
+const SOURCE_SHORT = {
+  "Shanghai Shipping Exchange":                          "SSE",
+  "EIA / FRED (DCOILBRENTEU)":                          "EIA / FRED",
+  "FRED (DEXCHUS)":                                     "FRED",
+  "S&P Global / JPMorgan":                              "S&P / JPMorgan",
+  "CPB Netherlands Bureau for Economic Policy Analysis":"CPB Netherlands",
+  "Derived":                                            "Derived",
+  "Derived (calendar)":                                 "Calendar",
+};
+
 const ALL_SOURCES = [
   "All Sources",
   "Shanghai Shipping Exchange",
@@ -42,18 +52,17 @@ const ALL_SOURCES = [
 ];
 
 const CATEGORIES = [
-  { id: "all",      label: "All",      icon: "M4 6h16M4 10h16M4 14h16M4 18h16" },
-  { id: "core",     label: "Core",     icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" },
-  { id: "lags",     label: "Lags",     icon: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" },
-  { id: "calendar", label: "Calendar", icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
+  { id: "all",        label: "All",        icon: "M4 6h16M4 10h16M4 14h16M4 18h16" },
+  { id: "core",       label: "Core",       icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" },
+  { id: "lags",       label: "Lags",       icon: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" },
+  { id: "calendar",   label: "Calendar",   icon: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" },
+  { id: "engineered", label: "Engineered", icon: "M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" },
 ];
 
+// Explicit lookup from feature_config.json's real ml_features - see
+// FEATURE_CATEGORY's own comment for why this isn't a naming heuristic.
 function getCategory(key) {
-  if (key.includes("_lag")) return "lags";
-  const src = FEATURE_META[key]?.source ?? "";
-  if (src.includes("calendar")) return "calendar";
-  if (key.startsWith("Month_") || key.startsWith("Q_") || ["Year","Quarter","Month","Week_of_Year"].includes(key)) return "calendar";
-  return "core";
+  return FEATURE_CATEGORY[key] ?? "core";
 }
 
 /* ── Shared Card — identical to App.jsx ── */
@@ -141,13 +150,16 @@ const FilterBar = ({ items, activeId, onChange }) => (
 
 function SourcePill({ source }) {
   const s = SOURCE_COLORS[source] ?? SOURCE_COLORS["Derived"];
+  const short = SOURCE_SHORT[source] ?? source;
   return (
-    <span style={{
+    <span title={source} style={{
       display: "inline-block", fontSize: 10, fontWeight: 600,
-      padding: "2px 8px", borderRadius: 5, lineHeight: 1.6,
+      padding: "3px 9px", borderRadius: 5, lineHeight: 1.5,
+      maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis",
+      whiteSpace: "nowrap", cursor: "default",
       background: s.bg, color: s.color, border: `1px solid ${s.border}`,
     }}>
-      {source}
+      {short}
     </span>
   );
 }
@@ -187,6 +199,7 @@ export function FeatureDictionary({ metrics }) {
     { label: "Core Features",  value: Object.keys(FEATURE_META).filter(k => getCategory(k) === "core").length },
     { label: "Lag Features",   value: Object.keys(FEATURE_META).filter(k => getCategory(k) === "lags").length },
     { label: "Calendar",       value: Object.keys(FEATURE_META).filter(k => getCategory(k) === "calendar").length },
+    { label: "Engineered",     value: Object.keys(FEATURE_META).filter(k => getCategory(k) === "engineered").length },
   ];
 
   return (
@@ -221,7 +234,7 @@ export function FeatureDictionary({ metrics }) {
       </div>
 
       {/* Stats row — hoverable Cards like App.jsx */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 12, marginBottom: 20 }}>
         {STATS.map(s => (
           <Card key={s.label} style={{ padding: "16px 18px" }}>
             <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: 1.8, textTransform: "uppercase", color: T.td, marginBottom: 6 }}>{s.label}</div>

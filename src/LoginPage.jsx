@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "./supabaseClient";
-import LOGO_ICON from "./assests/logo-icon.png";
+import LOGO_ICON from "./assets/logo-icon.png";
 
 const T = {
   bg: "#0c0d11", bgCard: "#13141a", bgRaised: "#1a1c24",
@@ -169,11 +169,17 @@ export default function LoginPage({ onLoginSuccess }) {
         <div style={{ position:"absolute", inset:0, backgroundImage:"linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px)", backgroundSize:"56px 56px", pointerEvents:"none" }}/>
 
         {/* brand */}
-        <div style={{ position:"relative", zIndex:1, display:"flex", alignItems:"center", gap:12 }}>
-          <img src={LOGO_ICON} alt="Fretra" style={{ height:44, width:"auto", objectFit:"contain" }} onError={e => e.target.style.display="none"}/>
-          <div>
-            <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontWeight:800, fontSize:18, letterSpacing:2, textTransform:"uppercase" }}>Fretra</div>
-            <div style={{ fontSize:11, color:T.tm, letterSpacing:.5 }}>Freight Intelligence Platform</div>
+        <div style={{ position:"relative", zIndex:1, display:"flex", alignItems:"center", gap:13 }}>
+          <img src={LOGO_ICON} alt="Fretra" style={{ height:40, width:"auto", objectFit:"contain", filter:"drop-shadow(0 0 12px rgba(79,110,247,.5))" }} onError={e => e.target.style.display="none"}/>
+          <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+            <div style={{
+              fontFamily:"'Barlow Condensed',sans-serif", fontWeight:800, fontSize:19, letterSpacing:2.2, lineHeight:1, textTransform:"uppercase",
+              background:"linear-gradient(90deg, #edeef2 0%, #b9c3ff 55%, #d9b8ff 100%)",
+              WebkitBackgroundClip:"text", backgroundClip:"text", WebkitTextFillColor:"transparent",
+            }}>
+              FRETRA
+            </div>
+            <div style={{ fontSize:9, fontWeight:600, letterSpacing:2.6, color:T.td, textTransform:"uppercase", lineHeight:1 }}>SCFI Rate Forecasting Engine</div>
           </div>
         </div>
 
