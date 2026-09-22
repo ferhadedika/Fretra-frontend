@@ -4,15 +4,8 @@ import {
   CartesianGrid, Tooltip, Legend, ReferenceLine, Brush,
 } from "recharts";
 import { RangeSelector, sliceByRange } from "./ui/fx";
+import { MODEL_COLORS } from "../utils/modelMeta";
 import "../styles/comparison.css";
-
-const MODEL_COLORS = {
-  xgboost: "#2171f5",
-  random_forest: "#39e07b",
-  sarimax: "#e07b39",
-  lstm: "#e0c239",
-  ensemble: "#ec4899",
-};
 
 function fmt(v, d = 2, s = "") {
   if (v === null || v === undefined) return "N/A";

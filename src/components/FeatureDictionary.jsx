@@ -1,24 +1,6 @@
 import { useState, useMemo } from "react";
 import { FEATURE_META, FEATURE_CATEGORY } from "../utils/featureMeta";
-
-const T = {
-  bg:       "#0c0d11",
-  bgCard:   "#13141a",
-  bgRaised: "#1a1c24",
-  border:   "#22242e",
-  borderH:  "#323546",
-  t1:       "#edeef2",
-  t2:       "#b0b4c4",
-  tm:       "#7a7f96",
-  td:       "#44475a",
-  blue:     "#4f6ef7",
-  violet:   "#8b5cf6",
-  green:    "#10b77f",
-  r:        "10px",
-  r2:       "14px",
-  shCard:   "0 2px 8px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.035)",
-  shHover:  "0 8px 28px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.05)",
-};
+import { T } from "./ui/fx";
 
 const SOURCE_COLORS = {
   "Shanghai Shipping Exchange":                          { bg: "rgba(79,110,247,.1)",  border: "rgba(79,110,247,.3)",  color: "#4f6ef7" },

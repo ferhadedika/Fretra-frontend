@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useTransform, useSpring, useMotionValue, useInView } from "framer-motion";
-import Lenis from "lenis";
 import { SiteHeader } from "./components/SiteHeader";
+import { useLenisScroll } from "./components/ui/fx";
 
 /* ============================================================================
    DATA — identical in substance to the original. Only em dashes and double
@@ -148,21 +148,6 @@ function usePointer() {
     return () => window.removeEventListener("pointermove", onMove);
   }, [x, y]);
   return { x, y };
-}
-
-function useSmoothScroll() {
-  const lenisRef = useRef(null);
-  useEffect(() => {
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) return;
-    const lenis = new Lenis({ duration: 1.15, easing: (t) => 1 - Math.pow(1 - t, 3), smoothWheel: true });
-    lenisRef.current = lenis;
-    let rafId;
-    const raf = (time) => { lenis.raf(time); rafId = requestAnimationFrame(raf); };
-    rafId = requestAnimationFrame(raf);
-    return () => { cancelAnimationFrame(rafId); lenis.destroy(); lenisRef.current = null; };
-  }, []);
-  return lenisRef;
 }
 
 function useCountUp(rawValue, inView, duration = 1.2) {
@@ -767,7 +752,7 @@ export default function FeaturesPage() {
   const [activeTab, setActiveTab] = useState("price");
   const cat = FEAT_CATS.find((c) => c.key === activeTab);
   const { x, y } = usePointer();
-  useSmoothScroll();
+  useLenisScroll({ duration: 1.15, easing: (t) => 1 - Math.pow(1 - t, 3), respectReducedMotion: true });
 
   return (
     <div style={{ position: "relative", minHeight: "100vh", color: T.t1, fontFamily: T.bodyFont, overflowX: "hidden" }}>

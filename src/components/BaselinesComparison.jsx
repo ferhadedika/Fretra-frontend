@@ -4,14 +4,7 @@ import {
   CartesianGrid, Tooltip, Legend, ReferenceLine,
 } from "recharts";
 import { useBaselines } from "../hooks/useBaselines";
-
-const MODEL_COLOR = {
-  xgboost:       "#2171f5",
-  random_forest: "#39e07b",
-  sarimax:       "#e07b39",
-  lstm:          "#e0c239",
-  ensemble:      "#ec4899",
-};
+import { MODEL_COLORS as MODEL_COLOR } from "../utils/modelMeta";
 
 function fmt(v, d = 2, s = "") {
   if (v === null || v === undefined) return "N/A";

@@ -12,15 +12,8 @@ import {
   Brush,
 } from "recharts";
 import { RangeSelector, sliceByRange } from "./ui/fx";
+import { MODEL_COLORS } from "../utils/modelMeta";
 import "../styles/chart.css";
-
-const MODEL_COLORS = {
-  xgboost: "#2171f5",
-  random_forest: "#39e07b",
-  sarimax: "#e07b39",
-  lstm: "#e0c239",
-  ensemble: "#ec4899",
-};
 
 function buildChartData(historical, forecast) {
   const histPoints = historical.map((p) => ({

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo, useCallback, createContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue, useInView } from "framer-motion";
-import Lenis from "lenis";
+import { useLenisScroll } from "./components/ui/fx";
 import LOGO_FULL from "./assets/logo-full.png";
 import LOGO_ICON from "./assets/logo-icon.png";
 
@@ -119,27 +119,6 @@ function usePointer() {
     return () => window.removeEventListener("pointermove", onMove);
   }, [x, y]);
   return { x, y };
-}
-
-/** Lenis smooth-scroll driver. Returns a ref holding the live instance. */
-function useSmoothScroll() {
-  const lenisRef = useRef(null);
-  useEffect(() => {
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) return;
-    const lenis = new Lenis({
-      duration: 1.15,
-      easing: (t) => 1 - Math.pow(1 - t, 3),
-      smoothWheel: true,
-      wheelMultiplier: 1,
-    });
-    lenisRef.current = lenis;
-    let rafId;
-    const raf = (time) => { lenis.raf(time); rafId = requestAnimationFrame(raf); };
-    rafId = requestAnimationFrame(raf);
-    return () => { cancelAnimationFrame(rafId); lenis.destroy(); lenisRef.current = null; };
-  }, []);
-  return lenisRef;
 }
 
 const LenisCtx = createContext(null);
@@ -1164,7 +1143,12 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const go = useCallback(() => navigate("/login"), [navigate]);
   const { x, y } = usePointer();
-  const lenisRef = useSmoothScroll();
+  const lenisRef = useLenisScroll({
+    duration: 1.15,
+    easing: (t) => 1 - Math.pow(1 - t, 3),
+    wheelMultiplier: 1,
+    respectReducedMotion: true,
+  });
 
   return (
     <LenisCtx.Provider value={lenisRef}>

@@ -2,15 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "./supabaseClient";
 import LOGO_ICON from "./assets/logo-icon.png";
-
-const T = {
-  bg: "#0c0d11", bgCard: "#13141a", bgRaised: "#1a1c24",
-  border: "#22242e", borderH: "#323546",
-  t1: "#edeef2", t2: "#b0b4c4", tm: "#7a7f96", td: "#44475a",
-  blue: "#4f6ef7", violet: "#8b5cf6", green: "#10b77f", amber: "#f59e0b",
-  r: "10px", r2: "14px",
-  shCard: "0 2px 8px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.035)",
-};
+import { T } from "./components/ui/fx";
 
 const SUPABASE_ERRORS = {
   "Invalid login credentials":           "Invalid email or password.",

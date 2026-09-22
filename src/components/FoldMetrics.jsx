@@ -2,15 +2,8 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, ReferenceLine, LineChart, Line, Legend, Cell,
 } from "recharts";
+import { MODEL_COLORS } from "../utils/modelMeta";
 import "../styles/folds.css";
-
-const MODEL_COLORS = {
-  xgboost: "#2171f5",
-  random_forest: "#39e07b",
-  sarimax: "#e07b39",
-  lstm: "#e0c239",
-  ensemble: "#ec4899",
-};
 
 function fmt(v, d = 2) {
   if (v === null || v === undefined) return "N/A";

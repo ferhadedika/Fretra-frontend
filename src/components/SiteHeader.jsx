@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import LOGO_ICON from "../assets/logo-icon.png";
+import { T } from "./ui/fx";
 
 /* ============================================================
    SiteHeader — the one nav bar used by every marketing page
@@ -9,14 +10,6 @@ import LOGO_ICON from "../assets/logo-icon.png";
    blur-on-scroll behaviour, same pill nav, same CTA everywhere,
    so the site no longer has five slightly-different headers.
    ============================================================ */
-
-const T = {
-  bg: "#0c0d11", border: "#22242e", borderH: "#323546",
-  t1: "#edeef2", t2: "#b0b4c4", tm: "#7a7f96", td: "#44475a",
-  blue: "#4f6ef7", violet: "#8b5cf6",
-  displayFont: "'Barlow Condensed',sans-serif",
-  bodyFont: "'Barlow','Inter',sans-serif",
-};
 
 const EASE = [0.16, 1, 0.3, 1];
 

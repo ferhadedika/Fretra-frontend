@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, animate } from "framer-motion";
-import Lenis from "lenis";
 import { SiteHeader } from "./components/SiteHeader";
+import { useLenisScroll } from "./components/ui/fx";
 
 /* ============================== TOKENS ============================== */
 const T = {
@@ -72,11 +72,11 @@ const MODELS = [
     desc: "A Long Short-Term Memory deep recurrent network trained on 12-week rolling sequences. Captures non-linear temporal dependencies and cyclical market dynamics that tree-based models may miss, adding complementary signal to the ensemble.",
     details: [
       { label: "Sequence Length", val: "12 Weeks" },
-      { label: "Hidden Units", val: "128 -> 64" },
+      { label: "Hidden Units", val: "96 -> 48" },
       { label: "Dropout", val: "0.2" },
-      { label: "Epochs", val: "200 (Early Stop)" },
-      { label: "Batch Size", val: "32" },
-      { label: "Optimiser", val: "Adam, lr=1e-3" },
+      { label: "Epochs", val: "250 (Early Stop, patience 20)" },
+      { label: "Batch Size", val: "16" },
+      { label: "Optimiser", val: "Adam, lr=8e-4 (decays via ReduceLROnPlateau)" },
     ],
     barPct: 74,
     curve: [70, 74, 68, 78, 66, 80, 64, 76, 62, 72, 60, 70],
@@ -107,16 +107,6 @@ const CV_FOLDS = [
 ];
 
 /* ============================== UTIL: smooth scroll ============================== */
-function useLenis() {
-  useEffect(() => {
-    const lenis = new Lenis({ duration: 1.1, easing: (t) => 1 - Math.pow(1 - t, 3), smoothWheel: true });
-    let raf;
-    function loop(time) { lenis.raf(time); raf = requestAnimationFrame(loop); }
-    raf = requestAnimationFrame(loop);
-    return () => { cancelAnimationFrame(raf); lenis.destroy(); };
-  }, []);
-}
-
 /* ============================== UTIL: animated counter ============================== */
 function AnimatedNumber({ value, suffix = "", decimals = 2, style }) {
   const ref = useRef(null);
@@ -294,7 +284,7 @@ function Reveal({ children, delay = 0, y = 24 }) {
 
 /* ============================== PAGE ============================== */
 export default function ModelsPage() {
-  useLenis();
+  useLenisScroll({ duration: 1.1, easing: (t) => 1 - Math.pow(1 - t, 3) });
   const navigate = useNavigate();
   const [active, setActive] = useState("XGBoost");
   const model = MODELS.find((m) => m.id === active);

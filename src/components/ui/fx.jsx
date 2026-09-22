@@ -9,22 +9,30 @@ import Lenis from "lenis";
    ──────────────────────────────────────────────────────────── */
 
 export const T = {
-  bg:       "#0c0d11",
-  bgCard:   "#13141a",
-  bgRaised: "#1a1c24",
-  border:   "#22242e",
-  borderH:  "#323546",
-  t1:       "#edeef2",
-  t2:       "#b0b4c4",
-  tm:       "#7a7f96",
-  td:       "#44475a",
-  blue:     "#4f6ef7",
-  violet:   "#8b5cf6",
-  green:    "#10b77f",
-  r:        "10px",
-  r2:       "14px",
-  shCard:   "0 2px 8px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.035)",
-  shHover:  "0 8px 28px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.05)",
+  bg:          "#0c0d11",
+  bgCard:      "#13141a",
+  bgRaised:    "#1a1c24",
+  border:      "#22242e",
+  borderH:     "#323546",
+  t1:          "#edeef2",
+  t2:          "#b0b4c4",
+  tm:          "#7a7f96",
+  td:          "#44475a",
+  blue:        "#4f6ef7",
+  violet:      "#8b5cf6",
+  green:       "#10b77f",
+  amber:       "#f59e0b",
+  pink:        "#ec4899",
+  cyan:        "#06b6d4",
+  r:           "10px",
+  r2:          "14px",
+  r3:          "20px",
+  glass:       "rgba(19,20,26,.55)",
+  glassBorder: "rgba(255,255,255,.08)",
+  shCard:      "0 2px 8px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.035)",
+  shHover:     "0 8px 28px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.05)",
+  displayFont: "'Barlow Condensed',sans-serif",
+  bodyFont:    "'Barlow','Inter',sans-serif",
 };
 
 /* ── Smooth scrolling (Lenis) ── */
@@ -42,6 +50,46 @@ export function useSmoothScroll() {
       lenis.destroy();
     };
   }, []);
+}
+
+/**
+ * Parameterized version of the same Lenis driver + rAF loop, for pages
+ * that need their own duration/easing (the marketing pages all run a
+ * snappier, eased scroll than the dashboard's useSmoothScroll above) or
+ * need to reach the live instance (e.g. to scrollTo() a section from a
+ * nav link). Returns a ref holding the live Lenis instance - null before
+ * mount, after unmount, or if respectReducedMotion skipped it.
+ */
+export function useLenisScroll({
+  duration = 1.05,
+  easing,
+  smoothWheel = true,
+  respectReducedMotion = false,
+  ...lenisOptions
+} = {}) {
+  const lenisRef = useRef(null);
+  useEffect(() => {
+    if (respectReducedMotion) {
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reduce) return;
+    }
+    const lenis = new Lenis({
+      duration, smoothWheel, ...(easing ? { easing } : {}), ...lenisOptions,
+    });
+    lenisRef.current = lenis;
+    let rafId;
+    const raf = (time) => {
+      lenis.raf(time);
+      rafId = requestAnimationFrame(raf);
+    };
+    rafId = requestAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(rafId);
+      lenis.destroy();
+      lenisRef.current = null;
+    };
+  }, []);
+  return lenisRef;
 }
 
 /* ── Scroll reveal wrapper ── */

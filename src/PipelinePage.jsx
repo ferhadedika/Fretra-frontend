@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import Lenis from "lenis";
 import { SiteHeader } from "./components/SiteHeader";
+import { useLenisScroll } from "./components/ui/fx";
 
 /* ============================== TOKENS (shared) ============================== */
 const T = {
@@ -73,8 +73,8 @@ features = add_covid_dummies(features)`,
     bullets: [
       "XGBoost: 200 Optuna Bayesian trials, optimal at 540 estimators, depth 6",
       "Random Forest: 30-iteration RandomizedSearchCV across key hyperparameters",
-      "LSTM: 12-week input sequence, 128 to 64 hidden units, dropout 0.2, early stopping",
-      "SARIMAX: trained as a statistical benchmark, excluded from production ensemble",
+      "LSTM: 12-week input sequence, 96 to 48 hidden units, dropout 0.2, early stopping",
+      "SARIMAX: statistical benchmark, also contributes a 10% weight in the production ensemble",
     ],
     code: `# XGBoost, Bayesian hyperparameter optimisation
 study = optuna.create_study(direction="minimize")
@@ -82,7 +82,7 @@ study.optimize(xgb_objective, n_trials=200)
 xgb = XGBRegressor(**study.best_params)
 
 # LSTM, sequence model with early stopping
-model = build_lstm(seq_len=12, units=[128,64])
+model = build_lstm(seq_len=12, units=[96,48])
 model.fit(..., callbacks=[EarlyStopping(patience=20)])`,
     tag: "Optuna · TensorFlow",
   },
@@ -149,16 +149,6 @@ async def get_forecast():
 ];
 
 /* ============================== SHARED PIECES ============================== */
-function useLenis() {
-  useEffect(() => {
-    const lenis = new Lenis({ duration: 1.1, easing: (t) => 1 - Math.pow(1 - t, 3), smoothWheel: true });
-    let raf;
-    function loop(time) { lenis.raf(time); raf = requestAnimationFrame(loop); }
-    raf = requestAnimationFrame(loop);
-    return () => { cancelAnimationFrame(raf); lenis.destroy(); };
-  }, []);
-}
-
 function Reveal({ children, delay = 0, y = 24 }) {
   return (
     <motion.div
@@ -302,7 +292,7 @@ function CodeBlock({ step }) {
 
 /* ============================== PAGE ============================== */
 export default function PipelinePage() {
-  useLenis();
+  useLenisScroll({ duration: 1.1, easing: (t) => 1 - Math.pow(1 - t, 3) });
   const navigate = useNavigate();
   const [active, setActive] = useState(0);
   const step = STEPS[active];
