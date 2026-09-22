@@ -15,18 +15,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl  = import.meta.env.VITE_SUPABASE_URL  ?? "";
-const supabaseKey  = import.meta.env.VITE_SUPABASE_ANON_KEY ?? "";
-
-console.log("SUPABASE URL:", supabaseUrl);
-console.log("SUPABASE KEY:", supabaseKey);
-
-// Only create the client if credentials are configured
-const supabase = supabaseUrl && supabaseKey
-  ? createClient(supabaseUrl, supabaseKey)
-  : null;
+import { supabase } from "../supabaseClient";
 
 /**
  * Returns { currentScfi, latestDate, loading, error }
