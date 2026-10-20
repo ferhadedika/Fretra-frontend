@@ -11,17 +11,18 @@ import LOGO_ICON from "./assets/logo-icon.png";
 
 const STATS = [
   { value: "10", suffix: "+", label: "Years of SCFI Historical Data" },
-  { value: "2.63", suffix: "%", label: "Best Forecast Accuracy (MAPE)" },
+  { value: "2.52", suffix: "%", label: "Best Forecast Accuracy (MAPE)" },
   { value: "12", suffix: "W", label: "Forward Forecast Horizon" },
-  { value: "0.996", suffix: "", label: "XGBoost Model Precision (R²)" },
+  { value: "0.997", suffix: "", label: "XGBoost Model Precision (R²)" },
 ];
 
+// Cross-validated metrics from backend/SCFI_model_metrics.json - re-sync on retrain.
 const MODELS = [
-  { id: "XGBoost", mape: "2.63%", r2: "0.996", mapeN: 97.4, r2N: 99.6, color: "#4f6ef7", violet: "rgba(79,110,247,.15)", desc: "Optuna-tuned · 540 estimators", best: true },
-  { id: "Ensemble", mape: "2.63%", r2: "0.996", mapeN: 97.4, r2N: 99.6, color: "#8b5cf6", violet: "rgba(139,92,246,.15)", desc: "Scipy-optimised weights" },
-  { id: "LSTM", mape: "4.23%", r2: "0.992", mapeN: 95.8, r2N: 99.2, color: "#10b77f", violet: "rgba(16,183,127,.15)", desc: "Deep recurrent network" },
-  { id: "Random Forest", mape: "2.86%", r2: "0.996", mapeN: 97.1, r2N: 99.6, color: "#f59e0b", violet: "rgba(245,158,11,.15)", desc: "30-iter randomised search" },
-  { id: "SARIMAX", mape: "3.28%", r2: "0.996", mapeN: 96.7, r2N: 99.6, color: "#06b6d4", violet: "rgba(6,182,212,.15)", desc: "Expanding-CV statistical baseline" },
+  { id: "XGBoost", mape: "2.52%", r2: "0.997", mapeN: 97.5, r2N: 99.7, color: "#4f6ef7", violet: "rgba(79,110,247,.15)", desc: "Optuna-tuned · 1,325 estimators", best: true },
+  { id: "Ensemble", mape: "2.64%", r2: "0.997", mapeN: 97.4, r2N: 99.7, color: "#8b5cf6", violet: "rgba(139,92,246,.15)", desc: "Scipy-optimised weights" },
+  { id: "LSTM", mape: "3.89%", r2: "0.993", mapeN: 96.1, r2N: 99.3, color: "#10b77f", violet: "rgba(16,183,127,.15)", desc: "Deep recurrent network" },
+  { id: "Random Forest", mape: "2.74%", r2: "0.996", mapeN: 97.3, r2N: 99.6, color: "#f59e0b", violet: "rgba(245,158,11,.15)", desc: "30-iter randomised search" },
+  { id: "SARIMAX", mape: "3.28%", r2: "0.996", mapeN: 96.7, r2N: 99.6, color: "#06b6d4", violet: "rgba(6,182,212,.15)", desc: "ARIMA(1,1,1) with macro drivers" },
 ];
 
 const FEATURES = [
@@ -35,9 +36,9 @@ const FEATURES = [
 
 const PIPELINE = [
   { label: "SCFI Market Data", sub: "Weekly index ingestion", color: "#4f6ef7" },
-  { label: "Feature Engineering", sub: "62 market signals", color: "#8b5cf6" },
+  { label: "Feature Engineering", sub: "68 market signals", color: "#8b5cf6" },
   { label: "Validation Protocol", sub: "Walk-forward CV", color: "#ec4899" },
-  { label: "Model Training", sub: "XGB / RF / LSTM", color: "#f59e0b" },
+  { label: "Model Training", sub: "XGB / RF / SARIMAX / LSTM", color: "#f59e0b" },
   { label: "Ensemble Optimisation", sub: "Scipy weight blending", color: "#10b77f" },
   { label: "12-Week Forecast", sub: "Live actionable output", color: "#4f6ef7" },
 ];
@@ -49,11 +50,15 @@ const WHY = [
   "SHAP attribution values at every forecast horizon for full commercial explainability",
 ];
 
+// Static snapshot of a real rolling-forecast run (data through 2026-07-03,
+// generated 2026-09-08) - this card does not fetch live data, so update
+// these alongside SNAPSHOT_W1 when refreshing marketing numbers.
+const SNAPSHOT_W1 = { ensemble: "3,393", asOf: "data to 3 Jul 2026" };
 const BASELINES = [
-  { label: "Naïve", val: "2,985", color: "#7a7f96" },
-  { label: "MA4", val: "2,942", color: "#f59e0b" },
-  { label: "EWM", val: "2,961", color: "#10b77f" },
-  { label: "Seas. Naïve", val: "1,832", color: "#8b5cf6" },
+  { label: "XGBoost", val: "3,412", color: "#4f6ef7" },
+  { label: "Random Forest", val: "3,408", color: "#f59e0b" },
+  { label: "SARIMAX", val: "3,341", color: "#06b6d4" },
+  { label: "LSTM", val: "3,298", color: "#10b77f" },
 ];
 
 const NAV_LINKS = [
@@ -978,9 +983,11 @@ const LiveChartCard = () => {
   return (
     <div ref={ref}>
       <SpotlightCard style={{ padding: 26 }} accent={T.blue}>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: T.td, marginBottom: 6, fontFamily: T.bodyFont }}>Live W+1 Forecast</div>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", color: T.td, marginBottom: 6, fontFamily: T.bodyFont }}>
+          Latest Ensemble W+1 Forecast · {SNAPSHOT_W1.asOf}
+        </div>
         <div style={{ fontFamily: T.displayFont, fontSize: 36, fontWeight: 800, color: T.t1, marginBottom: 22, letterSpacing: -0.5 }}>
-          2,986 <span style={{ fontSize: 16, color: T.tm, fontWeight: 400, fontFamily: T.bodyFont }}>SCFI pts</span>
+          {SNAPSHOT_W1.ensemble} <span style={{ fontSize: 16, color: T.tm, fontWeight: 400, fontFamily: T.bodyFont }}>SCFI pts</span>
         </div>
         <svg viewBox="0 0 340 110" style={{ width: "100%", height: "auto", overflow: "visible" }}>
           <defs>
@@ -1013,6 +1020,7 @@ const LiveChartCard = () => {
           />
           <motion.circle
             cx="340" cy="18" r="4.5" fill="none" stroke="#4f6ef7" strokeWidth="1.5"
+            initial={{ r: 4.5, opacity: 0.7 }}
             animate={{ r: [4.5, 11, 4.5], opacity: [0.7, 0, 0.7] }}
             transition={{ duration: 2.2, repeat: Infinity, ease: "easeOut" }}
           />
@@ -1045,7 +1053,7 @@ const WhyFretra = () => (
         <H2 style={{ marginBottom: 16 }}>Built for Commercial<br />Freight Intelligence</H2>
         <p style={{ color: T.tm, fontSize: 15, lineHeight: 1.8, marginBottom: 30, fontFamily: T.bodyFont }}>
           Fretra combines advanced gradient boosting with domain-specific market feature engineering:
-          52-week regime signals, Brent crude interactions, PMI crossover alerts, and CNY/USD momentum
+          52-week regime signals, Brent crude interactions, PMI momentum, and CNY/USD exchange-rate lags
           — giving freight teams the analytical edge they need.
         </p>
         <Stagger style={{ display: "flex", flexDirection: "column", gap: 14 }}>

@@ -18,26 +18,30 @@ const T = {
 
 const EASE = [0.16, 1, 0.3, 1];
 
-/* ============================== DATA (unchanged) ============================== */
+/* ============================== DATA ==============================
+   Metrics and hyperparameters mirror backend/SCFI_model_metrics.json (the
+   artifact the live API serves). vsNaive = % MAE improvement over the naive
+   random-walk baseline (MAE 65.22, backend/SCFI_model_metrics_baselines.json).
+   Re-sync these numbers whenever the models are retrained. */
 const MODELS = [
   {
     id: "XGBoost", tag: "BEST MODEL", color: T.blue,
-    mape: "2.63", mapeSuffix: "%", r2: "0.996", rmse: "61.4", mae: "44.2",
-    desc: "Gradient-boosted decision trees fine-tuned through 200 Bayesian optimisation trials across 5 walk-forward validation folds. Delivers the highest predictive accuracy across all performance metrics, making it the primary production-grade forecasting engine.",
+    mape: "2.52", mapeSuffix: "%", r2: "0.997", rmse: "70.5", mae: "46.6",
+    desc: "Gradient-boosted decision trees fine-tuned through 100 Bayesian optimisation trials, each scored across all 5 walk-forward validation folds. Delivers the highest predictive accuracy across all performance metrics, making it the primary production-grade forecasting engine.",
     details: [
-      { label: "Estimators", val: "540" },
-      { label: "Max Depth", val: "6" },
-      { label: "Learning Rate", val: "0.042" },
-      { label: "Optimiser", val: "Optuna · 200 trials" },
-      { label: "Subsample", val: "0.82" },
-      { label: "Col Sample", val: "0.74" },
+      { label: "Estimators", val: "1,325" },
+      { label: "Max Depth", val: "4" },
+      { label: "Learning Rate", val: "0.087" },
+      { label: "Optimiser", val: "Optuna · 100 trials" },
+      { label: "Subsample", val: "0.85" },
+      { label: "Col Sample", val: "0.90" },
     ],
-    barPct: 96,
+    vsNaive: 28.5,
     curve: [64, 58, 66, 52, 60, 48, 55, 44, 50, 40, 46, 38],
   },
   {
     id: "Ensemble", tag: "PRODUCTION", color: T.violet,
-    mape: "2.63", mapeSuffix: "%", r2: "0.996", rmse: "61.2", mae: "43.9",
+    mape: "2.64", mapeSuffix: "%", r2: "0.997", rmse: "73.7", mae: "49.2",
     desc: "A commercially deployed blend of all four base models - XGBoost, Random Forest, SARIMAX, and LSTM - with weights optimised via SLSQP constrained minimisation to minimise validation MAE, subject to a 10% minimum weight per model. The floor guarantees a genuine multi-model blend rather than letting the optimiser collapse onto a single dominant model, trading a small amount of validation accuracy for robustness against any one model underperforming in a future regime.",
     details: [
       { label: "XGBoost Weight", val: "0.70 (current)" },
@@ -48,27 +52,27 @@ const MODELS = [
       { label: "Objective", val: "Minimise Validation MAE" },
       { label: "Constraint", val: "Sum w = 1, w >= 0.10 each" },
     ],
-    barPct: 97,
+    vsNaive: 24.6,
     curve: [60, 57, 61, 50, 58, 47, 53, 43, 49, 39, 45, 37],
   },
   {
     id: "Random Forest", tag: "IN ENSEMBLE", color: T.green,
-    mape: "2.86", mapeSuffix: "%", r2: "0.996", rmse: "65.1", mae: "48.3",
-    desc: "A bagged ensemble of decision trees with randomised feature subsampling, tuned through 30-iteration randomised search. Contributes meaningful diversification to the production ensemble through independent variance reduction.",
+    mape: "2.74", mapeSuffix: "%", r2: "0.996", rmse: "79.2", mae: "50.9",
+    desc: "A bagged ensemble of decision trees with randomised feature subsampling, selected over ExtraTrees through a 30-iteration randomised search scored on all 5 folds. Contributes meaningful diversification to the production ensemble through independent variance reduction.",
     details: [
-      { label: "Estimators", val: "400" },
-      { label: "Max Features", val: "sqrt" },
-      { label: "Min Samples", val: "2" },
-      { label: "Tuner", val: "RandomizedSearchCV" },
-      { label: "Iterations", val: "30" },
-      { label: "OOB Score", val: "Enabled" },
+      { label: "Estimators", val: "600" },
+      { label: "Max Features", val: "0.7" },
+      { label: "Min Samples Leaf", val: "2" },
+      { label: "Max Depth", val: "30" },
+      { label: "Max Samples", val: "0.9" },
+      { label: "Tuner", val: "Randomised search · 30 iterations" },
     ],
-    barPct: 88,
+    vsNaive: 22.0,
     curve: [66, 61, 68, 55, 63, 51, 58, 47, 54, 44, 50, 42],
   },
   {
     id: "LSTM", tag: "IN ENSEMBLE", color: T.amber,
-    mape: "4.23", mapeSuffix: "%", r2: "0.992", rmse: "88.6", mae: "71.4",
+    mape: "3.89", mapeSuffix: "%", r2: "0.993", rmse: "108.4", mae: "75.0",
     desc: "A Long Short-Term Memory deep recurrent network trained on 12-week rolling sequences. Captures non-linear temporal dependencies and cyclical market dynamics that tree-based models may miss, adding complementary signal to the ensemble.",
     details: [
       { label: "Sequence Length", val: "12 Weeks" },
@@ -78,33 +82,35 @@ const MODELS = [
       { label: "Batch Size", val: "16" },
       { label: "Optimiser", val: "Adam, lr=8e-4 (decays via ReduceLROnPlateau)" },
     ],
-    barPct: 74,
+    vsNaive: -15.0,
     curve: [70, 74, 68, 78, 66, 80, 64, 76, 62, 72, 60, 70],
   },
   {
     id: "SARIMAX", tag: "IN ENSEMBLE", color: T.cyan,
     mape: "3.28", mapeSuffix: "%", r2: "0.996", rmse: "82.4", mae: "57.0",
-    desc: "Seasonal ARIMA with exogenous macroeconomic variables, expanding-window walk-forward validated alongside the three ML models. Contributes a statistically-grounded, linear-trend perspective to the ensemble, distinct from the tree/deep-learning models' non-linear pattern matching.",
+    desc: "ARIMA(1,1,1) with exogenous macroeconomic and calendar variables, expanding-window walk-forward validated alongside the three ML models. Seasonality enters through month and quarter dummies rather than a seasonal ARIMA term. Contributes a statistically-grounded, linear-trend perspective to the ensemble, distinct from the tree/deep-learning models' non-linear pattern matching.",
     details: [
       { label: "Order", val: "p=1, d=1, q=1" },
-      { label: "Seasonal", val: "P=1, D=1, Q=1, s=52" },
-      { label: "Exogenous", val: "PMI, Brent, CNY" },
+      { label: "Seasonal Order", val: "None (month & quarter dummies instead)" },
+      { label: "Exogenous", val: "Brent, CNY, PMI, Trade Vol + YoY, calendar (19)" },
       { label: "Status", val: "In Ensemble" },
       { label: "In Ensemble", val: "Included (10% weight, floored)" },
       { label: "R2", val: "0.9957" },
     ],
-    barPct: 80,
+    vsNaive: 12.6,
     curve: [58, 63, 55, 66, 52, 68, 49, 70, 46, 72, 43, 74],
   },
 ];
 
 const CV_FOLDS = [
-  { fold: 1, train: "2017-06-16 → 2018-12-14 (79w)", val: "2018-12-21 → 2020-06-19", lstm: "0.769" },
+  { fold: 1, train: "2017-06-16 → 2018-12-14 (79w)", val: "2018-12-21 → 2020-06-19", lstm: "0.801" },
   { fold: 2, train: "2017-06-16 → 2020-06-19 (158w)", val: "2020-06-26 → 2021-12-24", lstm: "0.995" },
-  { fold: 3, train: "2017-06-16 → 2021-12-24 (237w)", val: "2021-12-31 → 2023-06-30", lstm: "0.996" },
-  { fold: 4, train: "2017-06-16 → 2023-06-30 (316w)", val: "2023-07-07 → 2025-01-03", lstm: "0.976" },
-  { fold: 5, train: "2017-06-16 → 2025-01-03 (395w)", val: "2025-01-10 → 2026-07-10", lstm: "0.939" },
+  { fold: 3, train: "2017-06-16 → 2021-12-24 (237w)", val: "2021-12-31 → 2023-06-30", lstm: "0.993" },
+  { fold: 4, train: "2017-06-16 → 2023-06-30 (316w)", val: "2023-07-07 → 2025-01-03", lstm: "0.977" },
+  { fold: 5, train: "2017-06-16 → 2025-01-03 (395w)", val: "2025-01-10 → 2026-07-10", lstm: "0.941" },
 ];
+
+const BEST_VS_NAIVE = Math.max(...MODELS.map((m) => m.vsNaive));
 
 /* ============================== UTIL: smooth scroll ============================== */
 /* ============================== UTIL: animated counter ============================== */
@@ -398,13 +404,15 @@ export default function ModelsPage() {
 
                 <div style={{ marginBottom: 32 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                    <span style={{ fontSize: 11.5, color: T.tm, fontWeight: 600 }}>Relative performance vs. statistical baseline</span>
-                    <span style={{ fontSize: 11.5, color: model.color, fontWeight: 700, fontFamily: T.mono }}>{model.barPct}%</span>
+                    <span style={{ fontSize: 11.5, color: T.tm, fontWeight: 600 }}>MAE improvement vs. naïve baseline (bar relative to best model)</span>
+                    <span style={{ fontSize: 11.5, color: model.color, fontWeight: 700, fontFamily: T.mono }}>
+                      {model.vsNaive >= 0 ? "+" : "−"}{Math.abs(model.vsNaive).toFixed(1)}%
+                    </span>
                   </div>
                   <div style={{ height: 7, background: T.bgRaised, borderRadius: 4, overflow: "hidden", border: `1px solid ${T.border}` }}>
                     <motion.div
                       initial={{ width: 0 }}
-                      animate={{ width: `${model.barPct}%` }}
+                      animate={{ width: `${(Math.max(0, model.vsNaive) / BEST_VS_NAIVE) * 100}%` }}
                       transition={{ duration: 1, ease: EASE }}
                       style={{ height: "100%", background: `linear-gradient(90deg,${model.color},${model.color}99)`, borderRadius: 4, boxShadow: `0 0 14px ${model.color}66` }}
                     />

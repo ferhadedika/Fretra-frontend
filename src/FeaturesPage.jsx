@@ -9,93 +9,91 @@ import { useLenisScroll } from "./components/ui/fx";
    hyphens have been rewritten into plain, natural punctuation.
    ============================================================================ */
 
+// The 68 model inputs (backend/model_artifacts/feature_config.json ->
+// ml_features), grouped into five families. `count` is the number of real
+// model columns in each category and must sum to 68. SHAP rankings quoted
+// in descriptions come from backend/SCFI_model_metrics.json -> shap_global.
 const FEAT_CATS = [
   {
-    key: "price", label: "Price Intelligence", color: "#4f6ef7",
+    key: "price", label: "Price Momentum", color: "#4f6ef7", count: 8,
     svgPath: "M3 3v18h18M7 16l4-4 4 4 4-4",
-    desc: "Autoregressive signals derived directly from the SCFI, the single highest impact feature group across all production models. Captures short-term momentum, recent volatility, and directional strength in freight rate movements.",
+    desc: "Signals built from the SCFI's own recent movement: lags of its weekly change, 4-week momentum and an EMA crossover. This is the dominant feature group in both tree models, which together carry 80% of the production ensemble's weight.",
     features: [
-      { name: "Price Lags", raw: "scfi_lag_1 … scfi_lag_8", desc: "SCFI values at 1 to 8 week offsets. lag_1 and lag_2 are the dominant SHAP contributors in XGBoost, the most commercially decisive inputs." },
-      { name: "Rolling Mean", raw: "rolling_4w_mean, rolling_8w_mean", desc: "4-week and 8-week centred rolling averages that smooth short-term volatility and expose the underlying rate trend." },
-      { name: "Rolling Std Dev", raw: "rolling_4w_std, rolling_8w_std", desc: "Volatility signal quantifying how sharply the index is swinging relative to recent trading history." },
-      { name: "Rolling Range", raw: "rolling_4w_min, rolling_8w_max", desc: "Captures range compression and breakout setups, critical for detecting inflection points in freight rate cycles." },
-      { name: "First Difference", raw: "scfi_diff_1", desc: "Week-on-week change used as the primary model target. Stationarises the series for robust out-of-sample training." },
-      { name: "Momentum", raw: "scfi_mom_4w, scfi_mom_8w", desc: "Rate of change over 4 and 8 weeks, a directional strength indicator used by both tree-based and recurrent models." },
+      { name: "Weekly Change Lags", raw: "DSCFI_lag1, lag2, lag3, lag4, lag8, lag12", desc: "The SCFI's own week-over-week change from 1, 2, 3, 4, 8 and 12 weeks ago. The models forecast the weekly change, so its recent history is the autoregressive core; the 1 to 3 week lags all rank in XGBoost's top six drivers." },
+      { name: "4-Week Momentum", raw: "SCFI_pct_chg_4w", desc: "Percentage change in the SCFI over the trailing 4 weeks. The single most important input in both XGBoost and Random Forest by mean |SHAP|, well ahead of every other signal." },
+      { name: "EMA Crossover", raw: "SCFI_EMA4_vs_EMA12", desc: "Fast (4-week) minus slow (12-week) exponential moving average. Positive when short-term momentum is outpacing the longer trend, a classic trend-following signal." },
     ],
   },
   {
-    key: "macro", label: "Macroeconomic Signals", color: "#10b77f",
+    key: "macro", label: "Macroeconomic Signals", color: "#10b77f", count: 31,
     svgPath: "M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9",
-    desc: "External economic indicators that drive container shipping demand and carrier costs. All features are z-score normalised and lagged to eliminate any risk of forward data leakage.",
+    desc: "External drivers of container demand and carrier costs - oil, manufacturing activity, the yuan and world trade volume - each fed in as levels, lags and rate-of-change terms, plus cross-market interactions. These are the main inputs to SARIMAX.",
     features: [
-      { name: "Global PMI", raw: "global_pmi_lag_1, global_pmi_lag_2", desc: "JP Morgan Global Manufacturing PMI, the most widely tracked leading indicator for international trade volumes. Z-score normalised." },
-      { name: "Brent Crude Oil", raw: "brent_lag_1, brent_lag_2", desc: "Brent crude price: a direct input cost for ocean carriers and a reliable proxy for global economic demand conditions." },
-      { name: "Trade Volume Index", raw: "trade_vol_lag_1", desc: "Global trade volume index normalised via z-score. Measures the physical volume of goods entering the shipping network." },
-      { name: "CNY/USD Exchange Rate", raw: "cny_usd_lag_1, cny_usd_lag_2", desc: "Chinese yuan to US dollar rate, directly affects Chinese export competitiveness and container booking volumes." },
-      { name: "PMI Expansion Crossover", raw: "pmi_cross_50", desc: "Binary threshold signal: PMI crossing the 50-point expansion and contraction boundary, a recognised commercial turning point." },
-      { name: "Cross-Market Interactions", raw: "brent_x_pmi, brent_x_cny, trade_x_pmi", desc: "Three interaction terms capturing combined macro effects, among the highest impact non-linear signals in the feature set." },
+      { name: "Brent Crude Oil", raw: "Brent_Oil, Brent_Oil_lag1, lag2, lag4, lag8", desc: "Spot Brent price plus its 1, 2, 4 and 8 week lags. Bunker fuel is shipping's largest variable cost and is passed through to freight rates as surcharges." },
+      { name: "Oil Momentum & Z-Score", raw: "Brent_Oil_delta1, delta4, pct4, Brent_z13", desc: "1 and 4 week changes in Brent, its 4-week % change, and a 13-week z-score flagging unusually high or low oil prices. Brent's 4-week change is the LSTM's second most important input." },
+      { name: "Global Manufacturing PMI", raw: "World_PMI, lag1, lag4, lag8, delta1, delta4, pct4", desc: "Manufacturing PMI level, three lags and its rate of change. Above 50 signals expanding factory output, and with it more cargo to ship." },
+      { name: "CNY/USD Exchange Rate", raw: "CNY_USD, CNY_USD_lag1, lag2, lag4", desc: "The yuan's rate and three lags. A weaker yuan makes Chinese exports cheaper and lifts container demand; it is SARIMAX's single largest driver." },
+      { name: "World Trade Volume", raw: "Trade_Volume_Index, lag1, lag4, lag8, delta1, delta4, pct4, Trade_Volume_YoY", desc: "The CPB world trade volume index with lags, rate-of-change terms and year-on-year growth, measuring the physical volume of goods moving through the shipping network." },
+      { name: "Cross-Market Interactions", raw: "brent_x_pmi, brent_x_cny, trade_x_pmi", desc: "Products of oil price, PMI, the yuan and trade volume, capturing compounding pressure when several drivers move together." },
     ],
   },
   {
-    key: "regime", label: "Market Regime Detection", color: "#8b5cf6",
+    key: "regime", label: "Market Regime Detection", color: "#8b5cf6", count: 5,
     svgPath: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
-    desc: "Structural positioning features that communicate where the market currently sits within the freight rate cycle, enabling regime-aware forecasting that performs consistently across expansion, contraction, and shock periods.",
+    desc: "Positioning features that tell the models where the market sits within its 52-week range, so they can behave differently in depressed, normal and overheated markets.",
     features: [
-      { name: "52-Week Z-Score", raw: "zscore_52w", desc: "How many standard deviations the current SCFI sits from its 52-week mean, the primary regime classification signal." },
-      { name: "Distance from Cycle High", raw: "dist_from_52w_high", desc: "Percentage distance below the 52-week high, identifies overbought and cycle-peak market states." },
-      { name: "Distance from Cycle Low", raw: "dist_from_52w_low", desc: "Percentage distance above the 52-week low, identifies oversold and cycle-trough market states." },
-      { name: "Regime Classification", raw: "regime_label", desc: "Ordinal encoding: 0=trough, 1=recovery, 2=expansion, 3=peak, 4=contraction, derived from 52-week Z-score thresholds." },
-      { name: "Trend Direction", raw: "trend_dir_4w", desc: "Sign of 4-week linear regression slope, a categorical directional signal supporting short-horizon decision-making." },
-      { name: "Cycle Phase", raw: "cycle_phase", desc: "Composite signal combining regime label and trend direction for phase-aware, context-sensitive forecasting." },
+      { name: "52-Week Z-Score", raw: "SCFI_z52", desc: "How many standard deviations the SCFI sits from its trailing 52-week mean - the basis of the regime label." },
+      { name: "Distance from Cycle High", raw: "SCFI_dist_hi52", desc: "Gap between the current SCFI and its 52-week high, a proxy for market cooling. The third most important XGBoost input." },
+      { name: "Distance from Cycle Low", raw: "SCFI_dist_lo52", desc: "Gap above the 52-week low, a proxy for the strength of a recovery." },
+      { name: "Regime Label", raw: "SCFI_regime", desc: "A low / normal / high label (0, 1, 2) from thresholding the 52-week z-score, letting the tree models split on market state directly." },
+      { name: "Momentum × Regime", raw: "DSCFI_x_regime", desc: "Last week's change multiplied by the regime label, so the same momentum is read differently depending on whether the market is depressed or overheated." },
     ],
   },
   {
-    key: "temporal", label: "Seasonal & Temporal", color: "#f59e0b",
+    key: "temporal", label: "Seasonal & Temporal", color: "#f59e0b", count: 17,
     svgPath: "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
-    desc: "Calendar and cyclical encodings that enable the model to learn recurring seasonal patterns in freight rates, spanning Chinese New Year windows, peak export seasons, and multi-year trade cycle trends.",
+    desc: "Calendar encodings that let the models learn recurring seasonal patterns in freight rates - Chinese New Year, peak export season, Golden Week and the year-end slowdown.",
     features: [
-      { name: "Week of Year", raw: "week_of_year", desc: "ISO week number, captures Chinese New Year disruptions, Q4 peak season surges, and other commercially significant recurrent patterns." },
-      { name: "Calendar Month", raw: "month", desc: "Monthly encoding that captures typical intra-year booking and rate seasonality across the container shipping calendar." },
-      { name: "Fiscal Quarter", raw: "quarter", desc: "Q1 to Q4 ordinal, supports annual demand cycle detection and quarterly rate trend analysis." },
-      { name: "Cyclical Encoding", raw: "week_sin, week_cos", desc: "Sine and cosine encoding of week of year, prevents the model from treating week 52 and week 1 as temporally distant." },
-      { name: "Long-Run Growth Trend", raw: "year_trend", desc: "Linear year index capturing structural growth in global container trade volumes over the 10-year dataset horizon." },
-      { name: "Post-Peak Normalisation Flag", raw: "post_covid_flag", desc: "Binary flag for weeks after May 2022, isolates the post-peak rate normalisation regime for targeted model adaptation." },
+      { name: "Week of Year", raw: "week_of_year", desc: "ISO week number, capturing Chinese New Year disruptions, Q4 peak-season surges and other recurring patterns." },
+      { name: "Calendar Month", raw: "month", desc: "Month number, the coarse intra-year seasonality signal." },
+      { name: "Month Dummies", raw: "Month_Feb … Month_Dec", desc: "Eleven one-hot month flags (January is the baseline), letting each month carry its own effect - from the Chinese New Year spike to the December blank-sailing slowdown." },
+      { name: "Quarter Dummies", raw: "Q2, Q3, Q4", desc: "Quarter flags (Q1 is the baseline) for the spring restock, the Q3 peak season and the Q4 holiday rush then slowdown." },
+      { name: "Year", raw: "year", desc: "Calendar year, capturing long-run structural shifts in rate levels such as post-pandemic capacity growth." },
     ],
   },
   {
-    key: "shock", label: "Structural Break Variables", color: "#ec4899",
-    svgPath: "M13 10V3L4 14h7v7l9-11h-7z",
-    desc: "COVID-era structural break variables that allow the model to cleanly handle the extreme 2020 to 2022 rate spike, protecting baseline forecasting accuracy without contaminating pre-shock or post-shock market periods.",
+    key: "trend", label: "Trend & Volatility", color: "#ec4899", count: 7,
+    svgPath: "M22 12h-4l-3 9L9 3l-3 9H2",
+    desc: "Smoothed trend and volatility measures of the SCFI at several speeds, helping the models separate genuine trend shifts from short-term noise. These are the LSTM's most influential inputs.",
     features: [
-      { name: "Shock Period Indicator", raw: "covid_shock_dummy", desc: "Binary flag active during the COVID rate spike, from June 2020 to December 2022. Prevents regime bleed-out across training folds." },
-      { name: "Shock Phase Ordinal", raw: "phase_ordinal", desc: "Five-phase ordered encoding: 0=pre-COVID, 1=initial shock, 2=peak, 3=plateau, 4=normalisation." },
-      { name: "Mean-Reversion Decay", raw: "covid_decay", desc: "Exponential decay variable starting from the rate peak, models the structural return-to-baseline trajectory." },
-      { name: "Shock-Macro Interaction", raw: "covid_x_pmi", desc: "Shock dummy × PMI, captures how macroeconomic signals behaved differently during the acute disruption period." },
-      { name: "Era-Balanced Weights", raw: "covid_sample_weight", desc: "Shock-period rows are up-weighted during training to correct for era-imbalance and prevent baseline period dominance." },
-      { name: "Regime Transition Flag", raw: "structural_break_flag", desc: "Flags weeks within 8 weeks of a confirmed regime transition, an edge-aware signal for boundary period forecasting." },
+      { name: "Rolling Averages", raw: "SCFI_rolling_mean4, mean8, mean13", desc: "4, 8 and 13 week simple averages of the SCFI, smoothing week-to-week noise to expose the underlying trend at three speeds." },
+      { name: "Rolling Volatility", raw: "SCFI_rolling_std4, std8", desc: "4 and 8 week standard deviation of the SCFI. The 4-week measure is the second most important Random Forest input." },
+      { name: "Exponential Moving Averages", raw: "SCFI_EMA4, SCFI_EMA12", desc: "Fast and slow exponentially weighted averages that react to recent weeks more than simple averages do. The 12-week EMA is the LSTM's top input." },
     ],
   },
 ];
 
+// XGBoost global importance: top 10 features by mean |SHAP| (index points),
+// from backend/SCFI_model_metrics.json -> shap_global.xgboost.
 const SHAP_ITEMS = [
-  { name: "scfi_lag_1", val: 312, color: "#4f6ef7", pct: 100 },
-  { name: "scfi_lag_2", val: 218, color: "#4f6ef7", pct: 70 },
-  { name: "rolling_4w_mean", val: 174, color: "#4f6ef7", pct: 56 },
-  { name: "brent_x_pmi", val: 143, color: "#10b77f", pct: 46 },
-  { name: "zscore_52w", val: 128, color: "#8b5cf6", pct: 41 },
-  { name: "global_pmi_lag_1", val: 109, color: "#10b77f", pct: 35 },
-  { name: "covid_shock_dummy", val: 94, color: "#ec4899", pct: 30 },
-  { name: "week_of_year", val: 76, color: "#f59e0b", pct: 24 },
-  { name: "dist_from_52w_high", val: 68, color: "#8b5cf6", pct: 22 },
-  { name: "brent_lag_1", val: 61, color: "#10b77f", pct: 20 },
+  { name: "SCFI_pct_chg_4w", val: 52.4, color: "#4f6ef7", pct: 100 },
+  { name: "DSCFI_lag3", val: 14.3, color: "#4f6ef7", pct: 27.3 },
+  { name: "SCFI_dist_hi52", val: 13.3, color: "#8b5cf6", pct: 25.4 },
+  { name: "SCFI_rolling_std4", val: 12.9, color: "#ec4899", pct: 24.5 },
+  { name: "DSCFI_lag2", val: 9.4, color: "#4f6ef7", pct: 17.9 },
+  { name: "DSCFI_lag1", val: 8.6, color: "#4f6ef7", pct: 16.4 },
+  { name: "SCFI_rolling_mean4", val: 2.9, color: "#ec4899", pct: 5.6 },
+  { name: "DSCFI_x_regime", val: 2.5, color: "#8b5cf6", pct: 4.8 },
+  { name: "DSCFI_lag4", val: 2.5, color: "#4f6ef7", pct: 4.7 },
+  { name: "week_of_year", val: 2.4, color: "#f59e0b", pct: 4.7 },
 ];
 
 const DATA_STANDARDS = [
-  { label: "Macro normalisation", val: "Z-score (52-week rolling)", color: "#10b77f" },
-  { label: "Lag strategy", val: "1 to 8 weeks, zero alignment leakage", color: "#4f6ef7" },
-  { label: "Shock period handling", val: "Phase dummies + sample weighting", color: "#ec4899" },
+  { label: "Macro inputs", val: "Levels, lags & rate-of-change", color: "#10b77f" },
+  { label: "Lag strategy", val: "1 to 12 weeks, no look-ahead", color: "#4f6ef7" },
+  { label: "Regime handling", val: "52-week z-score + regime label", color: "#ec4899" },
   { label: "Forecast target variable", val: "First-differenced SCFI", color: "#8b5cf6" },
-  { label: "Feature selection", val: "SHAP attribution + VIF screening", color: "#f59e0b" },
+  { label: "Feature set", val: "Fixed 68 inputs, SHAP for interpretation", color: "#f59e0b" },
 ];
 
 const NAV_LINKS = [["Models", "/models"], ["Pipeline", "/pipeline"], ["Features", "/features"], ["About", "/about"]];
@@ -384,7 +382,7 @@ const CatIcon = ({ path, color, size = 42 }) => (
    so this page's header matches every other marketing page. */
 
 /* ============================================================================
-   HERO — signature visualization: 62 signals resolving into 5 categories
+   HERO — signature visualization: 68 signals resolving into 5 categories
    ============================================================================ */
 
 const HeroVisual = ({ mx, my }) => {
@@ -513,7 +511,7 @@ const Hero = ({ mx, my }) => (
         initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: EASE }}
         style={{ fontFamily: T.displayFont, fontSize: "clamp(38px,5.6vw,64px)", fontWeight: 800, lineHeight: 1.05, margin: "0 0 20px", letterSpacing: -1.2, maxWidth: 780 }}
       >
-        62 engineered market signals.<br />
+        68 engineered market signals.<br />
         <span style={{ background: "linear-gradient(90deg,#a78bfa,#ec4899 55%,#a78bfa)", backgroundSize: "200% auto", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", display: "inline-block" }} className="gradient-flow">
           Five intelligence categories.
         </span>
@@ -522,7 +520,7 @@ const Hero = ({ mx, my }) => (
         initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.15, ease: EASE }}
         style={{ fontSize: 16.5, color: T.t2, maxWidth: 640, lineHeight: 1.8, margin: 0, fontFamily: T.bodyFont }}
       >
-        Fretra's feature layer spans autoregressive price intelligence, z-score normalised macroeconomic signals, cycle regime detection, seasonal calendar encodings, and COVID structural break variables, engineered to deliver commercially reliable forecasts across all market conditions.
+        Fretra's feature layer spans SCFI price momentum, trend and volatility measures, macroeconomic drivers with cross-market interactions, 52-week market regime positioning, and seasonal calendar encodings - 68 inputs to the tree and LSTM models, 19 of which also drive SARIMAX.
       </motion.p>
     </div>
   </section>
@@ -551,7 +549,7 @@ const CategorySelector = ({ activeTab, setActiveTab }) => (
               <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: isActive ? `linear-gradient(90deg, transparent, ${c.color}, transparent)` : "transparent" }} />
               <div style={{ marginBottom: 14 }}><CatIcon path={c.svgPath} color={isActive ? c.color : T.td} /></div>
               <div style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: isActive ? c.color : T.t2, marginBottom: 6, lineHeight: 1.3, fontFamily: T.bodyFont }}>{c.label}</div>
-              <div style={{ fontSize: 12, color: T.td, fontFamily: T.bodyFont }}>{c.features.length} signals</div>
+              <div style={{ fontSize: 12, color: T.td, fontFamily: T.bodyFont }}>{c.count} signals</div>
               {isActive && (
                 <motion.div layoutId="cat-check" style={{ position: "absolute", top: 16, right: 16, width: 18, height: 18, borderRadius: "50%", background: c.color, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 0 10px ${c.color}` }}>
                   <svg width="10" height="10" fill="none" stroke="#08090c" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
@@ -644,11 +642,11 @@ const ShapChart = () => {
       <SpotlightCard style={{ padding: "26px 30px" }} accent={T.blue}>
         <SectionLabel>SHAP Attribution Analysis</SectionLabel>
         <div style={{ fontFamily: T.displayFont, fontSize: 24, fontWeight: 800, color: T.t1, marginBottom: 6 }}>Top 10 Decision Drivers</div>
-        <div style={{ fontSize: 12.5, color: T.tm, marginBottom: 22, fontFamily: T.bodyFont }}>The signals with the greatest measurable impact on each forecast output</div>
+        <div style={{ fontSize: 12.5, color: T.tm, marginBottom: 22, fontFamily: T.bodyFont }}>The inputs with the largest average impact on XGBoost's forecasts</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {SHAP_ITEMS.map((item, i) => <ShapRow key={item.name} item={item} i={i} inView={inView} />)}
         </div>
-        <div style={{ marginTop: 18, fontSize: 11, color: T.td, fontFamily: T.bodyFont }}>Mean |SHAP value| across 5 validation folds, XGBoost production model</div>
+        <div style={{ marginTop: 18, fontSize: 11, color: T.td, fontFamily: T.bodyFont }}>Mean |SHAP value| in SCFI index points, final XGBoost model over all training weeks</div>
       </SpotlightCard>
     </div>
   );
@@ -661,7 +659,8 @@ const ShapChart = () => {
 const SignalDistribution = ({ activeTab, setActiveTab }) => {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
-  const total = 62;
+  const total = FEAT_CATS.reduce((sum, c) => sum + c.count, 0);
+  const maxCount = Math.max(...FEAT_CATS.map((c) => c.count));
 
   return (
     <div ref={ref}>
@@ -673,7 +672,7 @@ const SignalDistribution = ({ activeTab, setActiveTab }) => {
           {FEAT_CATS.map((c, i) => (
             <motion.div
               key={c.key}
-              initial={{ width: 0 }} animate={{ width: inView ? `${100 / FEAT_CATS.length}%` : 0 }}
+              initial={{ width: 0 }} animate={{ width: inView ? `${(c.count / total) * 100}%` : 0 }}
               transition={{ duration: 0.8, delay: i * 0.08, ease: EASE }}
               onClick={() => setActiveTab(c.key)}
               style={{ background: c.color, opacity: activeTab === c.key ? 1 : 0.55, cursor: "pointer", transition: "opacity .2s" }}
@@ -691,9 +690,9 @@ const SignalDistribution = ({ activeTab, setActiveTab }) => {
             >
               <div style={{ width: 8, height: 8, borderRadius: "50%", background: c.color, flexShrink: 0, boxShadow: `0 0 6px ${c.color}88` }} />
               <span style={{ fontSize: 13, color: isActive ? T.t1 : T.t2, flex: 1, fontFamily: T.bodyFont, fontWeight: isActive ? 700 : 400 }}>{c.label}</span>
-              <span style={{ fontFamily: T.displayFont, fontSize: 18, fontWeight: 700, color: c.color }}>{c.features.length}</span>
+              <span style={{ fontFamily: T.displayFont, fontSize: 18, fontWeight: 700, color: c.color }}>{c.count}</span>
               <div style={{ width: 80, height: 4, background: "rgba(255,255,255,.05)", borderRadius: 2, overflow: "hidden" }}>
-                <motion.div initial={{ width: 0 }} animate={{ width: inView ? `${(c.features.length / 6) * 100}%` : 0 }} transition={{ duration: 0.8, delay: 0.2 }} style={{ height: "100%", background: c.color, borderRadius: 2 }} />
+                <motion.div initial={{ width: 0 }} animate={{ width: inView ? `${(c.count / maxCount) * 100}%` : 0 }} transition={{ duration: 0.8, delay: 0.2 }} style={{ height: "100%", background: c.color, borderRadius: 2 }} />
               </div>
             </div>
           );

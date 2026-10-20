@@ -188,7 +188,7 @@ export default function LoginPage({ onLoginSuccess }) {
 
         {/* stats */}
         <div style={{ position:"relative", zIndex:1, display:"flex", gap:0, background:T.bgCard, border:`1px solid ${T.border}`, borderRadius:T.r2, overflow:"hidden" }}>
-          {[{ val:"0.996", lbl:"XGBoost R²" },{ val:"12W", lbl:"Forecast Horizon" },{ val:"10+", lbl:"Years of Data" }].map(({ val, lbl }, i) => (
+          {[{ val:"0.997", lbl:"XGBoost R²" },{ val:"12W", lbl:"Forecast Horizon" },{ val:"10+", lbl:"Years of Data" }].map(({ val, lbl }, i) => (
             <div key={lbl} style={{ flex:1, textAlign:"center", padding:"20px 12px", borderRight: i < 2 ? `1px solid ${T.border}` : "none" }}>
               <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:26, fontWeight:800, color:T.blue, lineHeight:1, marginBottom:4 }}>{val}</div>
               <div style={{ fontSize:10, fontWeight:700, letterSpacing:1.2, textTransform:"uppercase", color:T.td }}>{lbl}</div>
@@ -196,21 +196,22 @@ export default function LoginPage({ onLoginSuccess }) {
           ))}
         </div>
 
-        {/* decorative forecast card */}
+        {/* forecast card: static snapshot of a real rolling-forecast run (data through
+            2026-07-03, generated 2026-09-08; current SCFI 3,326.87) - does not fetch live */}
         <div style={{ position:"relative", zIndex:1, background:T.bgCard, border:`1px solid ${T.border}`, borderRadius:T.r2, padding:"18px 20px", boxShadow:T.shCard }}>
           <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:"linear-gradient(90deg,#4f6ef7,#8b5cf6)" }}/>
-          <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:T.td, marginBottom:4 }}>SCFI Ensemble Forecast · W+1</div>
+          <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:2, textTransform:"uppercase", color:T.td, marginBottom:4 }}>SCFI Ensemble Forecast · W+1 · Data to 3 Jul 2026</div>
           <div style={{ display:"flex", alignItems:"baseline", gap:10, marginBottom:8 }}>
-            <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:36, fontWeight:800, color:T.t1, lineHeight:1 }}>1,842</div>
-            <div style={{ fontSize:13, fontWeight:700, color:T.green }}>↑ +3.2% WoW</div>
+            <div style={{ fontFamily:"'Barlow Condensed',sans-serif", fontSize:36, fontWeight:800, color:T.t1, lineHeight:1 }}>3,393</div>
+            <div style={{ fontSize:13, fontWeight:700, color:T.green }}>↑ +2.0% WoW</div>
           </div>
           <div style={{ height:4, background:T.bgRaised, borderRadius:2, overflow:"hidden", marginBottom:14, border:`1px solid ${T.border}` }}>
             <div style={{ height:"100%", width:"68%", background:"linear-gradient(90deg,#4f6ef7,#8b5cf6)", borderRadius:2 }}/>
           </div>
           {[
-            { label:"XGBoost",  val:"1,848", color:T.blue  },
-            { label:"Ensemble", val:"1,842", color:T.green },
-            { label:"LSTM",     val:"1,831", color:T.tm    },
+            { label:"XGBoost",  val:"3,412", color:T.blue  },
+            { label:"Ensemble", val:"3,393", color:T.green },
+            { label:"LSTM",     val:"3,298", color:T.tm    },
           ].map(({ label, val, color }) => (
             <div key={label} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0", borderBottom:`1px solid ${T.bgRaised}` }}>
               <span style={{ fontSize:12, color:T.tm }}>{label}</span>

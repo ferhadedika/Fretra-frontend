@@ -22,32 +22,33 @@ const STEPS = [
   {
     num: "01", color: "#4f6ef7", title: "Market Data Ingestion",
     sub: "SCFI + Global Macro Sources",
-    desc: "Weekly Shanghai Containerized Freight Index readings are loaded from the validated Supabase dataset, covering a decade of market history from 2016 to the present. External macroeconomic features including Global PMI, Brent Crude, CNY/USD, and the Trade Volume Index are fetched and merged by ISO week to ensure precise temporal alignment.",
+    desc: "Weekly Shanghai Containerized Freight Index readings are loaded from the validated Supabase dataset, covering a decade of market history from 2016 to the present. External macroeconomic drivers - Global Manufacturing PMI, Brent Crude, CNY/USD, and the World Trade Volume Index - are merged onto a single Friday-anchored weekly spine so every source lines up on the same week.",
     bullets: [
       "10+ years of SCFI data (from 2016), a commercially representative history",
       "Brent Crude Oil, Global Manufacturing PMI, CNY/USD rate, Trade Volume Index",
-      "ISO week spine alignment eliminates date-shift errors across data sources",
+      "Friday-anchored weekly spine, forward-filled, eliminates date-shift errors across sources",
       "Validated against published SCFI index reports for data integrity",
     ],
-    code: `df = load_scfi_from_supabase()
-macro = fetch_macro_features(["PMI","Brent","CNY","TradeVol"])
-df = df.merge(macro, on="iso_week", how="left")`,
+    code: `raw = supabase.table("scfi_weekly").select(RAW_HISTORY_COLUMNS).order("date")
+df = pd.DataFrame(raw.execute().data)
+df = df.set_index("date").resample("W-FRI").last().ffill()`,
     tag: "Supabase · pandas",
   },
   {
     num: "02", color: "#8b5cf6", title: "Market Signal Engineering",
-    sub: "62 Signals Constructed Across 5 Categories",
-    desc: "62 market signals are engineered across five intelligence categories: autoregressive price lags (1 to 8 weeks), rolling statistical measures, z-score normalised macroeconomic indicators with cross-market interaction terms, COVID-era structural break variables, and cyclical calendar encodings for seasonal pattern detection.",
+    sub: "68 Signals Constructed Across 5 Categories",
+    desc: "68 model inputs are engineered across five categories: price momentum (lags of the SCFI's own weekly change, 4-week momentum, EMA crossover), trend and volatility (rolling means, rolling standard deviations, EMAs), macroeconomic indicators with lags, rate-of-change terms and cross-market interactions, 52-week market regime positioning, and calendar dummies for seasonality.",
     bullets: [
-      "scfi_lag_1 through scfi_lag_8, consistently the top SHAP attribution drivers",
+      "SCFI 4-week % change is the single strongest SHAP driver in both tree models",
       "Brent x PMI, Brent x CNY, Trade Volume x PMI cross-market interaction signals",
       "52-week Z-score regime classification plus distance from cycle high and low",
-      "Sine/cosine week-of-year encoding for robust seasonal pattern capture",
+      "Month and quarter dummies capture Chinese New Year, peak season and Golden Week",
     ],
-    code: `features = build_lag_features(df, lags=range(1,9))
-features = add_rolling_stats(features, windows=[4,8])
-features = add_macro_interactions(features)
-features = add_covid_dummies(features)`,
+    code: `from app.forecasting.feature_engineering import engineer_features
+
+features = engineer_features(df)          # lags, rolling stats, regime, interactions
+X = features[cfg["ml_features"]]          # the 68 model inputs
+y = features["DELTA_SCFI"]                # target: weekly change (ΔSCFI)`,
     tag: "scikit-learn · numpy",
   },
   {
@@ -57,8 +58,8 @@ features = add_covid_dummies(features)`,
     bullets: [
       "Expanding window: training set grows incrementally with each fold",
       "1-step anchor evaluation prevents cumulative forecast error compounding",
-      "Fold 1: ~200 training weeks / Fold 5: ~400 training weeks",
-      "SARIMAX statistically eliminated at this stage (R2 = -0.84 vs. mean prediction)",
+      "Fold 1: 79 training weeks / Fold 5: 395 training weeks, each validated on the next 79",
+      "All four base models, SARIMAX included, are validated on exactly the same folds",
     ],
     code: `for train_idx, val_idx in expanding_cv(df, n_folds=5):
     X_train, X_val = X[train_idx], X[val_idx]
@@ -68,17 +69,17 @@ features = add_covid_dummies(features)`,
   },
   {
     num: "04", color: "#f59e0b", title: "Model Training & Optimisation",
-    sub: "XGBoost · Random Forest · LSTM",
-    desc: "Three production-grade models are trained in parallel across each validation fold. XGBoost is tuned through 200 Bayesian optimisation trials via Optuna. Random Forest is refined with 30-iteration randomised hyperparameter search. LSTM is trained on 12-week rolling sequences with early stopping. SARIMAX is retained as a statistical benchmark for performance contextualisation.",
+    sub: "XGBoost · Random Forest · SARIMAX · LSTM",
+    desc: "Four base models are trained and validated on the same 5 walk-forward folds. XGBoost is tuned through 100 Bayesian optimisation trials via Optuna, each trial scored across all 5 folds. Random Forest and ExtraTrees compete in a 30-iteration randomised search, with Random Forest selected. LSTM is trained on 12-week rolling sequences with early stopping, and SARIMAX models the series with exogenous macro and calendar variables.",
     bullets: [
-      "XGBoost: 200 Optuna Bayesian trials, optimal at 540 estimators, depth 6",
-      "Random Forest: 30-iteration RandomizedSearchCV across key hyperparameters",
+      "XGBoost: 100 Optuna Bayesian trials across all 5 folds, optimal at 1,325 estimators, depth 4",
+      "Random Forest: 30-iteration randomised search over RF and ExtraTrees, optimal at 600 trees",
       "LSTM: 12-week input sequence, 96 to 48 hidden units, dropout 0.2, early stopping",
-      "SARIMAX: statistical benchmark, also contributes a 10% weight in the production ensemble",
+      "SARIMAX(1,1,1): 19 exogenous inputs, contributes a 10% weight in the production ensemble",
     ],
     code: `# XGBoost, Bayesian hyperparameter optimisation
 study = optuna.create_study(direction="minimize")
-study.optimize(xgb_objective, n_trials=200)
+study.optimize(xgb_objective, n_trials=100)
 xgb = XGBRegressor(**study.best_params)
 
 # LSTM, sequence model with early stopping
@@ -128,22 +129,20 @@ narrative = build_narrative(top_positive, top_negative)`,
   {
     num: "07", color: "#4f6ef7", title: "Forecast Delivery API",
     sub: "FastAPI · 12-Week Live Output",
-    desc: "The trained production ensemble is serialised and served via a FastAPI backend. On request, it generates a 12-week multi-step forecast using recursive prediction, returned as structured JSON alongside SHAP attribution values, model-level performance breakdowns, and live baseline benchmark comparisons.",
+    desc: "The trained models are served by a FastAPI backend. Whenever a new week of SCFI data lands in Supabase, a scheduler regenerates a 12-week recursive forecast for all five models, stores it with per-model SHAP attributions, and backfills accuracy as real values arrive. The dashboard reads the latest run as structured JSON.",
     bullets: [
-      "GET /api/forecast returns a 12-week ensemble forecast with confidence context",
-      "GET /api/shap returns SHAP attribution values for the latest forecast period",
+      "GET /api/rolling-forecast/latest returns the latest 12-week run for all 5 models, with approximate 95% bands",
+      "GET /api/rolling-forecast/accuracy returns live MAE/RMSE/MAPE as forecasts are checked against actuals",
       "GET /api/metrics returns cross-validation performance metrics for all models",
-      "Supabase for live historical data, Firebase Authentication for access control",
+      "Supabase for live data and authentication (Google and email sign-in)",
     ],
-    code: `@app.get("/api/forecast")
-async def get_forecast():
-    last_week = supabase.fetch_latest()
-    forecasts = []
-    for step in range(1, 13):
-        pred = ensemble.predict(last_week)
-        forecasts.append({"week": step, "value": pred})
-        last_week = update_features(last_week, pred)
-    return {"forecast": forecasts, "weights": ensemble.weights}`,
+    code: `@router.get("/api/rolling-forecast/latest")
+async def get_latest(horizon_weeks: int = 8):
+    run = await supabase_service.get_latest_run_summary()
+    rows = await supabase_service.get_run_rows(run["run_id"])
+    shap = await supabase_service.get_shap_for_run(run["run_id"])
+    # one entry per model: 12 weekly points + local SHAP drivers
+    return build_response(run, rows, shap, horizon_weeks)`,
     tag: "FastAPI · Supabase",
   },
 ];

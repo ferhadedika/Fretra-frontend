@@ -10,7 +10,7 @@ const EASE = [0.16, 1, 0.3, 1];
    CONTENT DATA
    ============================================================ */
 const STATS = [
-  { val: "0.996", label: "XGBoost R\u00B2 Score", color: T.blue },
+  { val: "0.997", label: "XGBoost R\u00B2 Score", color: T.blue },
   { val: "5", label: "Validated Forecast Models", color: T.green },
   { val: "12W", label: "Forward Forecast Horizon", color: T.violet },
   { val: "10+", label: "Years of SCFI Market Data", color: T.amber },
@@ -89,13 +89,16 @@ const TECH_STACK_GROUPS = [
   },
 ];
 
+// R² and vsNaive (% MAE improvement over the naive baseline) mirror
+// backend/SCFI_model_metrics.json + _baselines.json - re-sync on retrain.
 const MODELS = [
-  { id: "01", label: "BEST", name: "XGBoost", type: "Gradient Boosting", r2: "0.996", pct: 96, color: T.blue },
-  { id: "02", label: "", name: "Random Forest", type: "Bagged Tree Ensemble", r2: "0.996", pct: 88, color: T.green },
-  { id: "03", label: "", name: "LSTM", type: "Deep Recurrent Network", r2: "0.992", pct: 74, color: T.violet },
-  { id: "04", label: "", name: "SARIMAX", type: "Statistical Time Series", r2: "0.996", pct: 85, color: T.cyan },
-  { id: "05", label: "FINAL", name: "Ensemble", type: "SLSQP Weight Optimised (70/10/10/10)", r2: "0.996", pct: 97, color: T.blue },
+  { id: "01", label: "BEST", name: "XGBoost", type: "Gradient Boosting", r2: "0.997", vsNaive: 28.5, color: T.blue },
+  { id: "02", label: "", name: "Random Forest", type: "Bagged Tree Ensemble", r2: "0.996", vsNaive: 22.0, color: T.green },
+  { id: "03", label: "", name: "LSTM", type: "Deep Recurrent Network", r2: "0.993", vsNaive: -15.0, color: T.violet },
+  { id: "04", label: "", name: "SARIMAX", type: "Statistical Time Series", r2: "0.996", vsNaive: 12.6, color: T.cyan },
+  { id: "05", label: "FINAL", name: "Ensemble", type: "SLSQP Weight Optimised (70/10/10/10)", r2: "0.997", vsNaive: 24.6, color: T.blue },
 ];
+const BEST_VS_NAIVE = Math.max(...MODELS.map((m) => m.vsNaive));
 
 const METHODOLOGY_TABS = [
   {
@@ -114,7 +117,7 @@ const METHODOLOGY_TABS = [
     key: "validation",
     label: "Validation Strategy",
     heading: "5-fold expanding walk forward validation.",
-    body: "Each fold trains on all historical data up to a cutoff and validates only on the following, unseen block \u2014 the training window grows from 79 weeks in fold 1 to 395 weeks in fold 5, while validation always covers the next 79 weeks. Because no fold's model ever sees data beyond its own cutoff, this eliminates the look ahead bias a random train/test split would introduce, reaching a final XGBoost R\u00B2 of 0.996 after tuning.",
+    body: "Each fold trains on all historical data up to a cutoff and validates only on the following, unseen block \u2014 the training window grows from 79 weeks in fold 1 to 395 weeks in fold 5, while validation always covers the next 79 weeks. Because no fold's model ever sees data beyond its own cutoff, this eliminates the look ahead bias a random train/test split would introduce, reaching a final XGBoost R\u00B2 of 0.997 after tuning.",
   },
   {
     key: "interpretability",
@@ -128,7 +131,7 @@ const TIMELINE = [
   { phase: "01", title: "Problem Definition & Literature Review", desc: "Scoped freight rate volatility as a forecasting problem and reviewed existing statistical and machine learning approaches used in logistics costing." },
   { phase: "02", title: "Dataset Construction", desc: "Built the core SCFI research dataset from scratch, merging five raw sources with Hampel filtering, lag features, and documented forward filled boundary values." },
   { phase: "03", title: "Model Development", desc: "Trained XGBoost with Optuna tuning, Random Forest, SARIMAX, and LSTM as four independent base learners, each capturing a different dimension of freight rate behaviour." },
-  { phase: "04", title: "Validation Protocol", desc: "Adopted 5-fold expanding walk forward cross validation, training on all history up to each cutoff and validating only on the following unseen block, reaching a final XGBoost R\u00B2 of 0.996 with SHAP interpretability integrated." },
+  { phase: "04", title: "Validation Protocol", desc: "Adopted 5-fold expanding walk forward cross validation, training on all history up to each cutoff and validating only on the following unseen block, reaching a final XGBoost R\u00B2 of 0.997 with SHAP interpretability integrated." },
   { phase: "05", title: "Full Stack Platform Build", desc: "Built the Fretra web application on React, FastAPI, Supabase, and Firebase, including live Supabase backed data hooks and Google OAuth authentication." },
   { phase: "06", title: "Live Data Automation", desc: "Automated weekly SCFI and macroeconomic updates using the FRED API and a Selenium and tedata based scraper, scheduled through GitHub Actions." },
   { phase: "07", title: "Final Submission", desc: "Consolidated the platform, model pipeline, and documentation for final year project presentation and academic assessment." },
@@ -318,6 +321,7 @@ const ForecastVisualization = () => {
       />
       <motion.circle
         cx="430" cy="105" r="5" fill="none" stroke={T.violet} strokeWidth="1.5"
+        initial={{ r: 5, opacity: 0.9 }}
         animate={{ r: [5, 22, 5], opacity: [0.9, 0, 0.9] }}
         transition={{ duration: 2.4, repeat: Infinity, ease: "easeOut" }}
       />
@@ -619,7 +623,7 @@ const Methodology = () => {
       <Reveal>
         <SectionLabel>Research & Methodology</SectionLabel>
         <h2 style={{ fontFamily: "'Barlow Condensed',sans-serif", fontSize: 38, fontWeight: 800, lineHeight: 1.05, margin: "0 0 40px", letterSpacing: -0.3 }}>
-          Four models, one validated 0.996 R\u00B2.
+          Four models, one validated 0.997 {"R\u00B2"}.
         </h2>
       </Reveal>
 
@@ -643,7 +647,7 @@ const Methodology = () => {
         </div>
       </Reveal>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 48, alignItems: "start" }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={active}
@@ -658,8 +662,8 @@ const Methodology = () => {
         </AnimatePresence>
 
         <Reveal delay={0.1}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 10 }}>
-            {MODELS.map(({ id, label, name, r2, pct, color }) => (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))", gap: 10 }}>
+            {MODELS.map(({ id, label, name, r2, vsNaive, color }) => (
               <Card key={id} accentColor={color} style={{ padding: "16px 12px" }} hover={false}>
                 <div style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: T.td, marginBottom: 8 }}>
                   {`M${id}`}{label ? ` \u00B7 ${label}` : ""}
@@ -670,13 +674,16 @@ const Methodology = () => {
                   <motion.div
                     style={{ height: "100%", background: color, borderRadius: 3 }}
                     initial={{ width: 0 }}
-                    whileInView={{ width: `${pct}%` }}
+                    whileInView={{ width: `${(Math.max(0, vsNaive) / BEST_VS_NAIVE) * 100}%` }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.9, ease: EASE }}
                   />
                 </div>
               </Card>
             ))}
+          </div>
+          <div style={{ fontSize: 11, color: T.td, marginTop: 12, lineHeight: 1.6 }}>
+            Cross-validated R². Bar: MAE improvement over the naïve baseline, relative to the best model.
           </div>
         </Reveal>
       </div>
