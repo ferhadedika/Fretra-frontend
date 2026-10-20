@@ -39,8 +39,36 @@ function DivergingValueLabel({ x, y, width, height, value }) {
   );
 }
 
+// ensemble_weights keys -> shap_global keys
+const ENSEMBLE_COMPONENTS = { xgboost: "xgboost", rf: "random_forest", sarimax: "sarimax", lstm: "lstm" };
+
+// Training only saves global SHAP for the four base models. The ensemble's
+// prediction is a fixed weighted sum of theirs, so its global importance is
+// derived as the same weighted blend of the components' mean |SHAP| (all in
+// SCFI index points). Strictly an upper bound - per-row SHAP values from
+// different models can partly cancel - hence labelled as a blend in the UI.
+function blendEnsembleGlobalShap(metrics) {
+  const weights = metrics?.ensemble_weights;
+  const perModel = metrics?.shap_global;
+  if (!weights || !perModel) return [];
+  const totals = {};
+  for (const [wKey, shapKey] of Object.entries(ENSEMBLE_COMPONENTS)) {
+    const w = weights[wKey];
+    for (const row of perModel[shapKey] || []) {
+      const v = row["Mean|SHAP|"] ?? row.value;
+      if (w == null || v == null) continue;
+      const f = row.Feature || row.feature;
+      totals[f] = (totals[f] ?? 0) + w * v;
+    }
+  }
+  return Object.entries(totals).map(([Feature, v]) => ({ Feature, "Mean|SHAP|": v }));
+}
+
 export function ShapPanel({ shap, activeModelId, metrics }) {
-  const globalShapData = metrics?.shap_global?.[activeModelId] || [];
+  const isBlendedEnsemble = activeModelId === "ensemble" && !metrics?.shap_global?.ensemble?.length;
+  const globalShapData = isBlendedEnsemble
+    ? blendEnsembleGlobalShap(metrics)
+    : metrics?.shap_global?.[activeModelId] || [];
   const localShapData  = metrics?.shap_last_prediction?.[activeModelId] || [];
 
   // `??` (not `||`) matters here: a feature can have a genuine Mean|SHAP|
@@ -97,7 +125,11 @@ export function ShapPanel({ shap, activeModelId, metrics }) {
       <div className="shap-grid">
         <div className="chart-card">
           <div className="chart-card__title">Global Feature Importance</div>
-          <div className="chart-card__sub">Mean |SHAP| impact: what matters across all forecasts</div>
+          <div className="chart-card__sub">
+            {isBlendedEnsemble
+              ? "Weighted blend of the four models' mean |SHAP|, using the ensemble weights"
+              : "Mean |SHAP| impact: what matters across all forecasts"}
+          </div>
           {globalData.length ? (
             <ResponsiveContainer width="100%" height={380}>
               <BarChart data={globalData} layout="vertical" margin={{ left: 8, right: 40, top: 4, bottom: 4 }}>
