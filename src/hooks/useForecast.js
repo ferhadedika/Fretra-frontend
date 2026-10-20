@@ -86,7 +86,11 @@ export function adaptRollingToShap(rolling, modelId) {
   };
 }
 
-export function useForecast() {
+// `enabled` should track whether the user is signed in: every endpoint here
+// requires a session, so fetching while logged out just 401s - and since this
+// hook lives at the App root, it would otherwise fire on every public page and
+// never retry after a login that doesn't reload the page.
+export function useForecast(enabled = true) {
   const [models, setModels] = useState([]);
   const [historical, setHistorical] = useState([]);
   const [activeModelId, setActiveModelId] = useState("xgboost");
@@ -99,10 +103,12 @@ export function useForecast() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
     async function init() {
       try {
         setLoadingInitial(true);
+        setError(null);
         const [modelsRes, historicalRes, metricsRes, rollingRes] = await Promise.all([
           fetchModels(),
           fetchHistoricalSeries(),
@@ -122,7 +128,7 @@ export function useForecast() {
     }
     init();
     return () => { cancelled = true; };
-  }, []);
+  }, [enabled]);
 
   // Force-generate a rolling forecast (e.g. no run exists yet, or the user
   // clicked "Refresh") and reload the latest run afterward.

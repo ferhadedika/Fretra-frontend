@@ -364,7 +364,7 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const forecastState = useForecast();
+  const forecastState = useForecast(!!session);
 
   if (session === undefined) return null;
 
